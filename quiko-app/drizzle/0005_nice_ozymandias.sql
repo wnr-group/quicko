@@ -1,0 +1,1 @@
+ALTER TYPE "public"."transport_mode" ADD VALUE 'car';

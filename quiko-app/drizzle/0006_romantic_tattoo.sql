@@ -1,0 +1,1 @@
+ALTER TABLE "trips" ADD COLUMN "arrive_date" date;

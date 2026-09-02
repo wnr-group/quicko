@@ -1,0 +1,1 @@
+ALTER TABLE "matches" ADD COLUMN "delivery_photo_url" text;

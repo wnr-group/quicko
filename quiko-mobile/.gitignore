@@ -1,0 +1,19 @@
+# Expo / RN
+node_modules/
+.expo/
+dist/
+web-build/
+*.log
+
+# Native
+ios/
+android/
+
+# Env — never commit real values; the template IS committed
+.env
+.env*.local
+!.env.example
+
+# Misc
+.DS_Store
+expo-env.d.ts

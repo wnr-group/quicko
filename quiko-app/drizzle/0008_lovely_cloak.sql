@@ -1,0 +1,1 @@
+ALTER TABLE "profiles" ADD COLUMN "cashfree_vendor_id" text;
