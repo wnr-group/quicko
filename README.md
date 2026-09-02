@@ -17,6 +17,7 @@ mobile app, and shared code.
 | **`quiko-app/core/`** | Framework-agnostic shared logic (pricing, geo/detour, formatting, moderation). Imported by **both** web and mobile — keep it free of React/Next/RN. |
 | **`quiko-mobile/`** | The **Expo / React Native** mobile app. Talks to `quiko-app`'s API. Currently behind the web app (see `plan.md`). |
 | **`docs/`** | Product, design, and business docs (incl. the vendor-onboarding checklist). |
+| **`WALKTHROUGH.md`** | Guided tour of every feature with demo logins — do this after setup to learn the app. |
 | **`plan.md`** | Living plan/journal: every feature built, decisions made, and what's pending. **Read this first** for context. |
 | **`quiko-prototype/`** | The original static HTML prototype. Historical reference only — not the live app. |
 
@@ -50,9 +51,9 @@ cp .env.example .env.local
 # 3. Start Postgres (Docker) — runs on host port 5433
 npm run db:up
 
-# 4. Create the schema and seed test data
+# 4. Create the schema and load demo data
 npm run db:migrate
-npm run db:seed
+npm run db:fixtures      # full walkthrough dataset (recommended — see "Seeding")
 
 # 5. Run the app
 npm run dev
@@ -74,6 +75,20 @@ There's no real SMS in dev — OTP is mocked.
 | **Admin** | `919999900001` | Full admin console (Profile → *Open admin panel*). |
 | **Admin** | `919000000002` | — |
 | **Support** | `91939313463` | Assist-only ops console (Profile → *Open ops console*). |
+
+### Seeding the database
+
+Two seed scripts (both idempotent — safe to re-run):
+
+| Command | What it loads |
+|---|---|
+| `npm run db:fixtures` | **Recommended.** A full walkthrough dataset — demo sender/traveller, staff roles, and matches in every state (paid, delivered+review, disputed, cancelled), plus a support thread and a moderation flag. Creates the logins below. |
+| `npm run db:seed` | Minimal — just a few traveller profiles + trips so the "find travellers" list isn't empty. |
+| `npm run db:reset` | Re-applies migrations, then runs `db:seed`. |
+
+`db:fixtures` adds these demo logins (OTP `123456`): **Sam Sender** `918888800001`, **Tara Traveller** `918888800002` (plus the admin/support accounts above). Then follow **[`WALKTHROUGH.md`](./WALKTHROUGH.md)** to tour every flow.
+
+> The seeds **upsert** and never delete login profiles — only their own fixture rows — so re-running won't wipe accounts you've created.
 
 ---
 
@@ -101,7 +116,8 @@ npx expo start            # press "i" for iOS simulator, "a" for Android
 | `npm run db:up` / `db:down` | Start / stop the Postgres container. |
 | `npm run db:generate` | Generate a new migration after editing `db/schema.ts`. |
 | `npm run db:migrate` | Apply pending migrations. |
-| `npm run db:seed` | Seed test data. |
+| `npm run db:seed` | Minimal seed (travellers + trips). |
+| `npm run db:fixtures` | Full walkthrough dataset (see *Seeding*). |
 | `npm run db:reset` | Migrate + reseed. |
 | `npm run db:studio` | Open Drizzle Studio (browse the DB). |
 | `npm run lint` | ESLint. |
