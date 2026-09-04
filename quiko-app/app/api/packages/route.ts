@@ -1,6 +1,6 @@
 import { bearerUser, ok, bad, unauth } from "@/lib/apiAuth";
 import { getMyPackages, createPackage } from "@/lib/queries/packages";
-import { sendRequest } from "@/lib/queries/requests";
+import { sendRequest, capacityError } from "@/lib/queries/requests";
 import { getTrip } from "@/lib/queries/trips";
 import { createPackageSchema } from "@/lib/validation";
 
@@ -36,11 +36,18 @@ export async function POST(req: Request) {
   const parsed = createPackageSchema.safeParse(input);
   if (!parsed.success) return bad(parsed.error.issues[0]?.message ?? "Invalid input");
 
+  // Reject a package the chosen traveller can't carry before creating anything.
+  const tripId = b.tripId ? String(b.tripId) : undefined;
+  const chosen = tripId ? await getTrip(tripId) : null;
+  if (chosen) {
+    const tooHeavy = capacityError(parsed.data.weightKg, chosen.capacityKg);
+    if (tooHeavy) return bad(tooHeavy);
+  }
+
   const pkg = await createPackage(u.id, parsed.data);
 
-  const tripId = b.tripId ? String(b.tripId) : undefined;
   if (tripId) {
-    const trip = await getTrip(tripId);
+    const trip = chosen;
     if (trip && trip.status === "active") {
       await sendRequest({
         packageId: pkg.id,

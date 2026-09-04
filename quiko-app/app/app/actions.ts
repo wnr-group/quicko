@@ -25,6 +25,8 @@ import {
   acceptOfferAsSender,
   declineOfferAsSender,
   adminCreateMatch,
+  capacityError,
+  pendingRequestOverCapacity,
 } from "@/lib/queries/requests";
 import {
   payForMatch,
@@ -160,10 +162,18 @@ export async function createFromExploreAction(
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
+  // Explore lists trips before the weight is known, so the chosen traveller may
+  // not be able to carry it. Check before creating anything — otherwise a
+  // rejected request leaves an orphan package behind.
+  const chosen = tripId ? await getTrip(tripId) : null;
+  if (tripId && chosen) {
+    const tooHeavy = capacityError(parsed.data.weightKg, chosen.capacityKg);
+    if (tooHeavy) return { ok: false as const, error: tooHeavy };
+  }
+
   const pkg = await createPackage(user.id, parsed.data);
   if (tripId) {
-    const trip = await getTrip(tripId);
-    if (trip && trip.status === "active") {
+    if (chosen && chosen.status === "active") {
       await sendRequest({
         packageId: pkg.id,
         tripId,
@@ -189,6 +199,17 @@ export async function updatePackageAction(
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
+  // A package with a pending request is still "active" and so still editable.
+  // Don't let the weight be raised past the capacity of a traveller who already
+  // has a request for it sitting in their queue.
+  const overCapacity = await pendingRequestOverCapacity(packageId, parsed.data.weightKg);
+  if (overCapacity !== null) {
+    return {
+      ok: false as const,
+      error: `A traveller you've already requested has only ${overCapacity} kg spare. Cancel that request before raising the weight to ${parsed.data.weightKg} kg.`,
+    };
+  }
+
   const updated = await updatePackage(packageId, user.id, parsed.data);
   if (!updated) {
     return { ok: false as const, error: "This package can no longer be edited" };
@@ -251,6 +272,8 @@ export async function sendRequestAction(params: {
   if (!trip || trip.status !== "active") {
     return { ok: false, error: "This trip is no longer available" };
   }
+  const tooHeavy = capacityError(pkg.weightKg, trip.capacityKg);
+  if (tooHeavy) return { ok: false, error: tooHeavy };
 
   await sendRequest({
     packageId: params.packageId,
@@ -324,6 +347,8 @@ export async function offerToCarryAction(
   if (trip.status !== "active") return { ok: false, error: "This trip is no longer active" };
   const pkg = await getPackage(packageId);
   if (!pkg || pkg.status !== "active") return { ok: false, error: "This package is no longer available" };
+  const tooHeavy = capacityError(pkg.weightKg, trip.capacityKg);
+  if (tooHeavy) return { ok: false, error: tooHeavy };
   await sendRequest({
     packageId,
     tripId,

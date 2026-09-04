@@ -1,6 +1,6 @@
 import "server-only";
 import { randomInt } from "node:crypto";
-import { and, desc, eq, inArray, ne } from "drizzle-orm";
+import { and, desc, eq, inArray, lt, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { matchRequests, matches, packages, trips, profiles } from "@/db/schema";
 import { notify } from "@/lib/queries/notifications";
@@ -11,6 +11,46 @@ import type { Role } from "@/core/types";
 
 function genOtp(): string {
   return String(randomInt(1000, 10000)); // 4-digit
+}
+
+/**
+ * A trip may only carry a package that fits its spare capacity.
+ *
+ * This is the binding rule, enforced at every write that pairs a package with a
+ * trip. The capacity conditions in the discovery queries (`findMatchingTrips`,
+ * `explorePackages`) only shape what gets *listed* — the explore-first sender
+ * flow deliberately lists trips before the weight is known, so nothing upstream
+ * guarantees the pair actually fits.
+ *
+ * Returns an error message, or null when the package fits.
+ */
+export function capacityError(weightKg: number, capacityKg: number): string | null {
+  if (weightKg <= capacityKg) return null;
+  return `This package is ${weightKg} kg — more than the trip's ${capacityKg} kg spare capacity.`;
+}
+
+/**
+ * Spare capacity of a trip with a still-pending request on this package that
+ * could no longer carry `weightKg` (i.e. the sender is editing the weight up
+ * from under a traveller who already has a request in their queue).
+ */
+export async function pendingRequestOverCapacity(
+  packageId: string,
+  weightKg: number,
+): Promise<number | null> {
+  const [row] = await db
+    .select({ capacityKg: trips.capacityKg })
+    .from(matchRequests)
+    .innerJoin(trips, eq(matchRequests.tripId, trips.id))
+    .where(
+      and(
+        eq(matchRequests.packageId, packageId),
+        eq(matchRequests.status, "pending"),
+        lt(trips.capacityKg, weightKg),
+      ),
+    )
+    .limit(1);
+  return row?.capacityKg ?? null;
 }
 
 type PkgCoords = { fromLat: number; fromLng: number; toLat: number; toLng: number };
@@ -176,6 +216,9 @@ export async function acceptRequest(requestId: string, travelerId: string) {
 
     if (!trip || trip.travelerId !== travelerId) throw new Error("Not allowed");
 
+    const tooHeavy = capacityError(pkg.weightKg, trip.capacityKg);
+    if (tooHeavy) throw new Error(tooHeavy);
+
     const base = req.counterAmount ?? req.amount;
     const detour = matchDetour(pkg, trip);
     const [match] = await tx
@@ -274,6 +317,9 @@ export async function acceptOfferAsSender(requestId: string, senderId: string) {
     if (!trip) throw new Error("Trip no longer available");
     if (trip.status !== "active") throw new Error("Trip no longer available");
 
+    const tooHeavy = capacityError(pkg.weightKg, trip.capacityKg);
+    if (tooHeavy) throw new Error(tooHeavy);
+
     const base = req.counterAmount ?? req.amount;
     const detour = matchDetour(pkg, trip);
     const [match] = await tx
@@ -331,6 +377,8 @@ export async function adminCreateMatch(
     if (!trip) return { ok: false, error: "Trip not found" };
     if (trip.status !== "active") return { ok: false, error: "Trip is not active" };
     if (trip.travelerId === pkg.senderId) return { ok: false, error: "Sender and traveller are the same person" };
+    const tooHeavy = capacityError(pkg.weightKg, trip.capacityKg);
+    if (tooHeavy) return { ok: false, error: tooHeavy };
 
     const base = pkg.offerPrice ?? pkg.maxPrice ?? 0;
     const detour = matchDetour(pkg, trip);
