@@ -10,6 +10,7 @@ import {
   IconArrowRight,
   IconChevronRight,
   IconPackage,
+  IconPlane,
   IconEdit,
   TRANSPORT_ICONS,
 } from "@/components/icons";
@@ -139,6 +140,24 @@ export default async function PackageDetailPage({
           />
         ) : (
           <>
+            {/* Find travellers — the main action on an unmatched package.
+                Mirrors the traveller side's "Find packages to carry" banner. */}
+            {pkg.status === "active" && (
+              <Link
+                href={`/app/packages/${pkg.id}/travelers`}
+                className="mt-3 flex items-center gap-3 rounded-2xl bg-brand p-3.5 shadow-card active:scale-[0.99]"
+              >
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-ink text-brand">
+                  <IconPlane width={19} height={19} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="font-bold">Find travellers</div>
+                  <div className="text-[13px] text-ink-soft">Browse travellers on your route &amp; request</div>
+                </div>
+                <IconChevronRight width={18} height={18} className="shrink-0 text-ink" />
+              </Link>
+            )}
+
             {/* Offers from travelers — the sender accepts/declines these */}
             {offers.length > 0 && (
               <>
@@ -179,20 +198,9 @@ export default async function PackageDetailPage({
               </>
             )}
 
-            <div className="mb-2 mt-7 flex items-center justify-between px-1">
-              <h2 className="text-[13px] font-bold uppercase tracking-wide text-muted">
-                Requests ({sent.length})
-              </h2>
-              {pkg.status === "active" && (
-                <Link
-                  href={`/app/packages/${pkg.id}/travelers`}
-                  className="flex items-center gap-0.5 text-sm font-bold text-ink"
-                >
-                  Find travelers
-                  <IconChevronRight width={16} height={16} />
-                </Link>
-              )}
-            </div>
+            <h2 className="mb-2 mt-7 px-1 text-[13px] font-bold uppercase tracking-wide text-muted">
+              Requests ({sent.length})
+            </h2>
 
             {sent.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-line bg-white/60 p-6 text-center text-sm text-muted">
