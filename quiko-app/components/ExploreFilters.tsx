@@ -15,13 +15,7 @@ const TRANSPORTS = [
   { value: "bus", label: "Bus" },
   { value: "car", label: "Car" },
 ];
-const RATINGS = [
-  { value: "", label: "Any rating" },
-  { value: "3", label: "3★+" },
-  { value: "4", label: "4★+" },
-];
-
-export function ExploreFilters({ sort, transport, minRating }: { sort: string; transport: string; minRating: string }) {
+export function ExploreFilters({ sort, transport }: { sort: string; transport: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -47,7 +41,6 @@ export function ExploreFilters({ sort, transport, minRating }: { sort: string; t
       </label>
 
       <ChipRow options={TRANSPORTS} value={transport} onPick={(v) => set("transport", v)} />
-      <ChipRow options={RATINGS} value={minRating} onPick={(v) => set("minRating", v)} />
     </div>
   );
 }
