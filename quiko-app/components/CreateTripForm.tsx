@@ -8,10 +8,14 @@ import { Card, Label, FieldButton, Segmented, StepBtn, TIME_WINDOWS } from "@/co
 import { IconMapPin, IconFlag, IconPlus, IconMinus, IconArrowLeft, IconHome } from "@/components/icons";
 import { reverseGeocode } from "@/components/geocode";
 import { roadDistanceKm, type PinnedLocation } from "@/core/geo";
-import { DETOUR_RATE, FREE_DETOUR_KM } from "@/core/pricing";
+import { DETOUR_RATE, FREE_DETOUR_KM, MAX_EXTRA_DETOUR_KM, detourFee } from "@/core/pricing";
 import { createTripAction } from "@/app/app/actions";
 
 const LocationSheet = dynamic(() => import("@/components/LocationSheet"), { ssr: false });
+
+// The slider is expressed as the whole detour the traveller will make: the free
+// 2 km plus their willingness on top (max 10) = 12 km.
+const MAX_TOTAL_DETOUR_KM = FREE_DETOUR_KM + MAX_EXTRA_DETOUR_KM;
 
 const TRANSPORT = [
   { value: "flight" as const, label: "Flight" },
@@ -93,6 +97,7 @@ export function CreateTripForm({ today }: { today: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const totalDetourKm = FREE_DETOUR_KM + extraDetourKm;
   const distance = from && to ? roadDistanceKm(from, to) : 0;
   const orderOk =
     arriveDate > departDate || (arriveDate === departDate && arriveTime >= departTime);
@@ -241,23 +246,25 @@ export function CreateTripForm({ today }: { today: string }) {
                 <div className="mt-4">
                   <div className="mb-1 flex items-baseline justify-between">
                     <span className="text-[13px] font-semibold text-ink">
-                      Up to +{extraDetourKm} km beyond the free {FREE_DETOUR_KM} km
+                      Up to {totalDetourKm} km detour — first {FREE_DETOUR_KM} km free
                     </span>
-                    <span className="text-[13px] font-bold text-ink">≈ ₹{extraDetourKm * DETOUR_RATE} max</span>
+                    <span className="text-[13px] font-bold text-ink">≈ ₹{detourFee(totalDetourKm)} max</span>
                   </div>
+                  {/* Shown as the total detour (2–12 km); stored as the extra
+                      beyond the free 2 km, which is what the API expects (0–10). */}
                   <input
                     type="range"
-                    min={1}
-                    max={10}
+                    min={FREE_DETOUR_KM}
+                    max={MAX_TOTAL_DETOUR_KM}
                     step={1}
-                    value={extraDetourKm}
-                    onChange={(e) => setExtraDetourKm(Number(e.target.value))}
+                    value={totalDetourKm}
+                    onChange={(e) => setExtraDetourKm(Number(e.target.value) - FREE_DETOUR_KM)}
                     className="w-full accent-brand"
-                    aria-label="Extra detour kilometres"
+                    aria-label="Total detour kilometres"
                   />
                   <div className="flex justify-between text-[11px] font-medium text-muted">
-                    <span>+1 km</span>
-                    <span>+10 km</span>
+                    <span>{FREE_DETOUR_KM} km</span>
+                    <span>{MAX_TOTAL_DETOUR_KM} km</span>
                   </div>
                   <p className="mt-2 text-[12px] leading-snug text-muted">
                     You&rsquo;ll only earn the extra when a package actually pulls you off
