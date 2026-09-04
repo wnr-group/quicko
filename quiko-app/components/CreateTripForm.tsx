@@ -225,10 +225,14 @@ export function CreateTripForm({ today }: { today: string }) {
                   aria-checked={detourOn}
                   aria-label="Willing to detour to earn more"
                   onClick={() => setDetourOn((v) => !v)}
-                  className={`relative mt-0.5 h-7 w-12 shrink-0 rounded-full transition-colors ${detourOn ? "bg-brand" : "bg-neutral-300"}`}
+                  className={`relative mt-0.5 h-7 w-12 shrink-0 rounded-full transition-colors active:scale-95 ${
+                    detourOn ? "bg-brand shadow-brand" : "bg-neutral-500"
+                  }`}
                 >
                   <span
-                    className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-all ${detourOn ? "left-[22px]" : "left-0.5"}`}
+                    className={`absolute top-0.5 h-6 w-6 rounded-full shadow-md transition-all ${
+                      detourOn ? "left-[22px] bg-ink" : "left-0.5 bg-white"
+                    }`}
                   />
                 </button>
               </div>
