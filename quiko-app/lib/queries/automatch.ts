@@ -28,6 +28,7 @@ export async function notifyMatchesForNewTrip(trip: {
   }
   const matches = await explorePackages({
     tripId: trip.id,
+    travelerId: trip.travelerId,
     fromLat: trip.fromLat,
     fromLng: trip.fromLng,
     toLat: trip.toLat,
@@ -66,6 +67,7 @@ export async function notifyMatchesForNewPackage(pkg: {
   weightKg: number;
 }): Promise<number> {
   const trips = await findMatchingTrips({
+    senderId: pkg.senderId,
     fromLat: pkg.fromLat,
     fromLng: pkg.fromLng,
     toLat: pkg.toLat,

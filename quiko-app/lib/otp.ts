@@ -4,8 +4,20 @@ import "server-only";
 // Prod (key set) → MSG91's OTP API (generates, sends, and verifies server-side).
 // Swapping SMS providers later means editing only this file.
 
+/**
+ * Canonical E.164 digits, e.g. "919999900001".
+ *
+ * Phone IS the login identity (`profiles.phone`), so the same person typing
+ * "98765 43210", "+91 98765 43210" or "098765 43210" must resolve to ONE
+ * profile — otherwise they silently end up with duplicate accounts holding
+ * separate packages, trips, ratings and wallet balances.
+ */
 export function normalizePhone(input: string): string {
-  return input.replace(/\D/g, ""); // E.164 digits, e.g. "919999900001"
+  let d = input.replace(/\D/g, "");
+  if (d.startsWith("00")) d = d.slice(2); // 00 international prefix
+  if (d.length === 11 && d.startsWith("0")) d = d.slice(1); // national trunk prefix
+  if (d.length === 10 && /^[6-9]/.test(d)) d = `91${d}`; // bare Indian mobile
+  return d;
 }
 
 interface OtpProvider {

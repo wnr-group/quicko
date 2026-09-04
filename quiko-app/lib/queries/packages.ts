@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, gte, inArray, lte, notInArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lte, ne, notInArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { packages, profiles, matchRequests } from "@/db/schema";
 import { calculatePrice } from "@/core/pricing";
@@ -53,6 +53,7 @@ export async function createPackage(senderId: string, input: CreatePackageInput)
  */
 export async function explorePackages(params: {
   tripId: string;
+  travelerId: string;
   fromLat: number;
   fromLng: number;
   toLat: number;
@@ -90,6 +91,8 @@ export async function explorePackages(params: {
         eq(packages.status, "active"),
         gte(packages.weightKg, 0),
         lte(packages.weightKg, params.capacityKg),
+        eq(profiles.status, "active"), // no suspended senders
+        ne(packages.senderId, params.travelerId), // you can't carry your own package
         lte(packages.travelDate, params.tripDate),
         gte(sql`coalesce(${packages.dateTo}, ${packages.travelDate})`, params.tripDate),
         excludeIds.length > 0 ? notInArray(packages.id, excludeIds) : undefined,

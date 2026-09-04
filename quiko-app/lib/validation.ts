@@ -55,3 +55,18 @@ export const createTripSchema = z
   );
 
 export type CreateTripInput = z.infer<typeof createTripSchema>;
+
+// Profile fields. Shared by onboarding and profile editing so the two paths
+// can't drift — the bounds here are the server-side truth (the `maxLength`
+// attributes in the forms are only a client-side hint).
+export const profileSchema = z.object({
+  fullName: z.string().trim().min(2, "Enter your name").max(60, "Name is too long"),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email("Enter a valid email")
+    .max(120, "Email is too long"),
+});
+
+export type ProfileInput = z.infer<typeof profileSchema>;

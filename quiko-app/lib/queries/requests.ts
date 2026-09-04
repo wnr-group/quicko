@@ -9,6 +9,8 @@ import { detourKm, detourTier } from "@/core/geo";
 import { detourFee } from "@/core/pricing";
 import type { Role } from "@/core/types";
 
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 function genOtp(): string {
   return String(randomInt(1000, 10000)); // 4-digit
 }
@@ -27,6 +29,32 @@ function genOtp(): string {
 export function capacityError(weightKg: number, capacityKg: number): string | null {
   if (weightKg <= capacityKg) return null;
   return `This package is ${weightKg} kg — more than the trip's ${capacityKg} kg spare capacity.`;
+}
+
+/** Nobody can be both sides of a delivery (self-paid escrow, self-rating). */
+export function selfMatchError(senderId: string, travelerId: string): string | null {
+  return senderId === travelerId
+    ? "You can't carry your own package."
+    : null;
+}
+
+/**
+ * A suspended account can't sign in, so it can never accept, hand over, deliver
+ * or confirm. Pairing with one strands the delivery (and any escrowed money),
+ * so both sides are checked before a request or a match is created.
+ */
+export async function suspendedError(
+  tx: Tx,
+  profileId: string,
+  who: "sender" | "traveller",
+): Promise<string | null> {
+  const [p] = await tx
+    .select({ status: profiles.status })
+    .from(profiles)
+    .where(eq(profiles.id, profileId))
+    .limit(1);
+  if (!p) return `This ${who}'s account no longer exists.`;
+  return p.status === "suspended" ? `This ${who}'s account is suspended.` : null;
 }
 
 /**
@@ -216,8 +244,14 @@ export async function acceptRequest(requestId: string, travelerId: string) {
 
     if (!trip || trip.travelerId !== travelerId) throw new Error("Not allowed");
 
+    const isSelf = selfMatchError(pkg.senderId, travelerId);
+    if (isSelf) throw new Error(isSelf);
+
     const tooHeavy = capacityError(pkg.weightKg, trip.capacityKg);
     if (tooHeavy) throw new Error(tooHeavy);
+
+    const senderGone = await suspendedError(tx, pkg.senderId, "sender");
+    if (senderGone) throw new Error(senderGone);
 
     const base = req.counterAmount ?? req.amount;
     const detour = matchDetour(pkg, trip);
@@ -317,8 +351,14 @@ export async function acceptOfferAsSender(requestId: string, senderId: string) {
     if (!trip) throw new Error("Trip no longer available");
     if (trip.status !== "active") throw new Error("Trip no longer available");
 
+    const isSelf = selfMatchError(senderId, trip.travelerId);
+    if (isSelf) throw new Error(isSelf);
+
     const tooHeavy = capacityError(pkg.weightKg, trip.capacityKg);
     if (tooHeavy) throw new Error(tooHeavy);
+
+    const travellerGone = await suspendedError(tx, trip.travelerId, "traveller");
+    if (travellerGone) throw new Error(travellerGone);
 
     const base = req.counterAmount ?? req.amount;
     const detour = matchDetour(pkg, trip);
@@ -379,6 +419,10 @@ export async function adminCreateMatch(
     if (trip.travelerId === pkg.senderId) return { ok: false, error: "Sender and traveller are the same person" };
     const tooHeavy = capacityError(pkg.weightKg, trip.capacityKg);
     if (tooHeavy) return { ok: false, error: tooHeavy };
+    for (const [id, who] of [[pkg.senderId, "sender"], [trip.travelerId, "traveller"]] as const) {
+      const gone = await suspendedError(tx, id, who);
+      if (gone) return { ok: false, error: gone };
+    }
 
     const base = pkg.offerPrice ?? pkg.maxPrice ?? 0;
     const detour = matchDetour(pkg, trip);

@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, gte, lte } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lte, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { trips, profiles } from "@/db/schema";
 import { routeMatches } from "@/core/geo";
@@ -37,6 +37,9 @@ export async function exploreTrips(params: {
         gte(trips.travelDate, params.dateFrom),
         lte(trips.travelDate, params.dateTo),
         eq(trips.status, "active"),
+        // A suspended traveller can't accept, pick up or deliver — keep their
+        // trips out of discovery so nobody requests (and pays for) a dead end.
+        eq(profiles.status, "active"),
       ),
     )
     .orderBy(asc(trips.travelDate), asc(trips.arriveTime));
@@ -61,6 +64,7 @@ export type MatchingTrip = Awaited<ReturnType<typeof findMatchingTrips>>[number]
  * Ranked by trust.
  */
 export async function findMatchingTrips(pkg: {
+  senderId: string;
   fromLat: number;
   fromLng: number;
   toLat: number;
@@ -90,6 +94,8 @@ export async function findMatchingTrips(pkg: {
         lte(trips.travelDate, pkg.dateTo ?? pkg.travelDate),
         eq(trips.status, "active"),
         gte(trips.capacityKg, pkg.weightKg),
+        eq(profiles.status, "active"), // no suspended travellers
+        ne(trips.travelerId, pkg.senderId), // you can't carry your own package
       ),
     )
     .orderBy(desc(profiles.trustScore), desc(profiles.ratingAvg));

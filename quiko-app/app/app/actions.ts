@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/auth";
 import {
   createPackageSchema,
   createTripSchema,
+  profileSchema,
   type CreatePackageInput,
   type CreateTripInput,
 } from "@/lib/validation";
@@ -26,6 +27,7 @@ import {
   declineOfferAsSender,
   adminCreateMatch,
   capacityError,
+  selfMatchError,
   pendingRequestOverCapacity,
 } from "@/lib/queries/requests";
 import {
@@ -167,6 +169,8 @@ export async function createFromExploreAction(
   // rejected request leaves an orphan package behind.
   const chosen = tripId ? await getTrip(tripId) : null;
   if (tripId && chosen) {
+    const isSelf = selfMatchError(user.id, chosen.travelerId);
+    if (isSelf) return { ok: false as const, error: isSelf };
     const tooHeavy = capacityError(parsed.data.weightKg, chosen.capacityKg);
     if (tooHeavy) return { ok: false as const, error: tooHeavy };
   }
@@ -248,11 +252,11 @@ export async function updateProfileAction(
   email: string,
 ): Promise<ActionResult> {
   const user = await requireUser();
-  const name = fullName.trim();
-  const mail = email.trim().toLowerCase();
-  if (name.length < 2) return { ok: false, error: "Enter a valid name" };
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) return { ok: false, error: "Enter a valid email" };
-  await updateProfile(user.id, { fullName: name, email: mail });
+  const parsed = profileSchema.safeParse({ fullName, email });
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  await updateProfile(user.id, { fullName: parsed.data.fullName, email: parsed.data.email });
   revalidatePath("/app/profile");
   revalidatePath("/app");
   return { ok: true };
@@ -272,6 +276,8 @@ export async function sendRequestAction(params: {
   if (!trip || trip.status !== "active") {
     return { ok: false, error: "This trip is no longer available" };
   }
+  const isSelf = selfMatchError(user.id, trip.travelerId);
+  if (isSelf) return { ok: false, error: isSelf };
   const tooHeavy = capacityError(pkg.weightKg, trip.capacityKg);
   if (tooHeavy) return { ok: false, error: tooHeavy };
 
@@ -347,6 +353,8 @@ export async function offerToCarryAction(
   if (trip.status !== "active") return { ok: false, error: "This trip is no longer active" };
   const pkg = await getPackage(packageId);
   if (!pkg || pkg.status !== "active") return { ok: false, error: "This package is no longer available" };
+  const isSelf = selfMatchError(pkg.senderId, user.id);
+  if (isSelf) return { ok: false, error: isSelf };
   const tooHeavy = capacityError(pkg.weightKg, trip.capacityKg);
   if (tooHeavy) return { ok: false, error: tooHeavy };
   await sendRequest({

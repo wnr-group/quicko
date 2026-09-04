@@ -1,6 +1,6 @@
 import { bearerUser, ok, bad, unauth } from "@/lib/apiAuth";
 import { getMyPackages, createPackage } from "@/lib/queries/packages";
-import { sendRequest, capacityError } from "@/lib/queries/requests";
+import { sendRequest, capacityError, selfMatchError } from "@/lib/queries/requests";
 import { getTrip } from "@/lib/queries/trips";
 import { createPackageSchema } from "@/lib/validation";
 
@@ -40,6 +40,8 @@ export async function POST(req: Request) {
   const tripId = b.tripId ? String(b.tripId) : undefined;
   const chosen = tripId ? await getTrip(tripId) : null;
   if (chosen) {
+    const isSelf = selfMatchError(u.id, chosen.travelerId);
+    if (isSelf) return bad(isSelf);
     const tooHeavy = capacityError(parsed.data.weightKg, chosen.capacityKg);
     if (tooHeavy) return bad(tooHeavy);
   }

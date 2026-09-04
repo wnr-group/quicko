@@ -28,6 +28,7 @@ export default async function TripPackagesPage({
     trip.fromLat != null && trip.fromLng != null && trip.toLat != null && trip.toLng != null
       ? await explorePackages({
           tripId: trip.id,
+          travelerId: trip.travelerId,
           fromLat: trip.fromLat,
           fromLng: trip.fromLng,
           toLat: trip.toLat,

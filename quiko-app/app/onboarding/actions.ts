@@ -4,10 +4,10 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getAuthUser } from "@/lib/auth";
 import { updateProfile } from "@/lib/queries/users";
+import { profileSchema } from "@/lib/validation";
 
-const schema = z.object({
-  fullName: z.string().trim().min(2, "Enter your name").max(60),
-  email: z.string().trim().toLowerCase().email("Enter a valid email").max(120),
+// The profile fields come from the shared schema; `next` is onboarding-only.
+const schema = profileSchema.extend({
   next: z.string().optional(),
 });
 

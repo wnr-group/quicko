@@ -492,9 +492,16 @@ export async function getUserMatches(profileId: string) {
     .innerJoin(profiles, eq(matches.senderId, profiles.id)) // counterpart = sender
     .where(eq(matches.travelerId, profileId));
 
+  // The two queries overlap when one profile is BOTH sides of a match, which
+  // would list the row twice (React then sees duplicate keys). Creating such a
+  // match is blocked now, but legacy rows exist — show them once, sender-side.
+  const seen = new Set(asSender.map((r) => r.match.id));
+
   return [
     ...asSender.map((r) => ({ ...r, role: "sender" as const, href: `/app/packages/${r.package.id}` })),
-    ...asTraveler.map((r) => ({ ...r, role: "traveler" as const, href: `/app/travel/trips/${r.match.tripId}` })),
+    ...asTraveler
+      .filter((r) => !seen.has(r.match.id))
+      .map((r) => ({ ...r, role: "traveler" as const, href: `/app/travel/trips/${r.match.tripId}` })),
   ].sort((a, b) => (b.match.updatedAt?.getTime() ?? 0) - (a.match.updatedAt?.getTime() ?? 0));
 }
 
