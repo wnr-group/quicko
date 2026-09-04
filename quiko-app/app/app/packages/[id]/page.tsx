@@ -77,9 +77,10 @@ export default async function PackageDetailPage({
             <StatusBadge status={pkg.status} />
           </div>
 
-          <dl className="mt-4 grid grid-cols-2 gap-2 border-t border-line pt-3 text-center">
+          <dl className="mt-4 grid grid-cols-3 gap-2 border-t border-line pt-3 text-center">
             <Detail k="Weight" v={`${pkg.weightKg} kg`} />
             <Detail k="Speed" v={SPEED_LABELS[pkg.timePreference] ?? pkg.timePreference} />
+            <Detail k="Your offer" v={inr(pkg.offerPrice)} />
           </dl>
         </div>
 
