@@ -82,7 +82,7 @@ export default async function TravelersPage({
                   {trips.length} traveler{trips.length > 1 ? "s" : ""} on your route
                 </p>
                 <div className="flex flex-col gap-3">
-                  {trips.map(({ trip, traveler }) => (
+                  {trips.map(({ trip, traveler, spareKg }) => (
                     <TravelerCard
                       key={trip.id}
                       packageId={pkg.id}
@@ -93,7 +93,7 @@ export default async function TravelersPage({
                       deliveries={traveler.deliveriesCount}
                       kycLevel={traveler.kycLevel}
                       transport={trip.transport}
-                      capacityKg={trip.capacityKg}
+                      capacityKg={Number(spareKg)}
                       pickupArea={trip.pickupArea ?? ""}
                       deliveryArea={trip.deliveryArea ?? ""}
                       alreadyRequested={requestedTripIds.has(trip.id)}

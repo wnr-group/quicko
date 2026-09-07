@@ -29,6 +29,7 @@ import {
   capacityError,
   selfMatchError,
   pendingRequestOverCapacity,
+  spareCapacity,
   travellerVerificationError,
 } from "@/lib/queries/requests";
 import {
@@ -173,7 +174,7 @@ export async function createFromExploreAction(
   if (tripId && chosen) {
     const isSelf = selfMatchError(user.id, chosen.travelerId);
     if (isSelf) return { ok: false as const, error: isSelf };
-    const tooHeavy = capacityError(parsed.data.weightKg, chosen.capacityKg);
+    const tooHeavy = capacityError(parsed.data.weightKg, await spareCapacity(chosen.id, chosen.capacityKg));
     if (tooHeavy) return { ok: false as const, error: tooHeavy };
     const unverified = await travellerVerificationError(chosen.travelerId);
     if (unverified) return { ok: false as const, error: unverified };
@@ -282,7 +283,7 @@ export async function sendRequestAction(params: {
   }
   const isSelf = selfMatchError(user.id, trip.travelerId);
   if (isSelf) return { ok: false, error: isSelf };
-  const tooHeavy = capacityError(pkg.weightKg, trip.capacityKg);
+  const tooHeavy = capacityError(pkg.weightKg, await spareCapacity(trip.id, trip.capacityKg));
   if (tooHeavy) return { ok: false, error: tooHeavy };
   const unverified = await travellerVerificationError(trip.travelerId);
   if (unverified) return { ok: false, error: unverified };
@@ -361,7 +362,7 @@ export async function offerToCarryAction(
   if (!pkg || pkg.status !== "active") return { ok: false, error: "This package is no longer available" };
   const isSelf = selfMatchError(pkg.senderId, user.id);
   if (isSelf) return { ok: false, error: isSelf };
-  const tooHeavy = capacityError(pkg.weightKg, trip.capacityKg);
+  const tooHeavy = capacityError(pkg.weightKg, await spareCapacity(trip.id, trip.capacityKg));
   if (tooHeavy) return { ok: false, error: tooHeavy };
   // The offering traveller is the one who'd carry it — verify them, not the sender.
   const unverified = await travellerVerificationError(user.id, true);

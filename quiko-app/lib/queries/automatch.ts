@@ -2,6 +2,7 @@ import "server-only";
 import { db } from "@/db";
 import { explorePackages } from "@/lib/queries/packages";
 import { findMatchingTrips } from "@/lib/queries/trips";
+import { spareCapacity } from "@/lib/queries/requests";
 import { notify } from "@/lib/queries/notifications";
 
 /**
@@ -34,7 +35,7 @@ export async function notifyMatchesForNewTrip(trip: {
     toLat: trip.toLat,
     toLng: trip.toLng,
     tripDate: trip.travelDate,
-    capacityKg: trip.capacityKg,
+    capacityKg: await spareCapacity(trip.id, trip.capacityKg),
   });
 
   let sent = 0;

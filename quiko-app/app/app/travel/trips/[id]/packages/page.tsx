@@ -5,6 +5,7 @@ import { OfferButton } from "@/components/OfferButton";
 import { IconArrowRight, IconStar, IconWeight, IconPackage } from "@/components/icons";
 import { requireUser, getProfile } from "@/lib/auth";
 import { getOwnedTrip } from "@/lib/queries/trips";
+import { spareCapacity } from "@/lib/queries/requests";
 import { explorePackages } from "@/lib/queries/packages";
 import { inr, dateShort, initials } from "@/core/format";
 import { VERIFIED_LEVEL } from "@/lib/queries/kyc";
@@ -38,7 +39,7 @@ export default async function TripPackagesPage({
           toLat: trip.toLat,
           toLng: trip.toLng,
           tripDate: trip.travelDate,
-          capacityKg: trip.capacityKg,
+          capacityKg: await spareCapacity(trip.id, trip.capacityKg),
         })
       : [];
 
