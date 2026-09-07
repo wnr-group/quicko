@@ -109,9 +109,10 @@ export async function advanceMatchAction(
   packageId: string,
   to: "picked_up" | "in_transit",
   photo?: string,
+  otp?: string,
 ): Promise<ActionResult> {
   const user = await requireUser();
-  const res = await advanceMatchAsTraveler(matchId, user.id, to, photo);
+  const res = await advanceMatchAsTraveler(matchId, user.id, to, photo, otp);
   if (res.ok) revalidateTraveler(tripId, packageId);
   return res;
 }

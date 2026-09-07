@@ -126,6 +126,7 @@ export default async function PackageDetailPage({
             matchId={match.match.id}
             status={match.match.status}
             price={match.match.agreedPrice}
+            pickupOtp={match.match.pickupOtp ?? ""}
             otp={match.match.deliveryOtp ?? ""}
             travelerName={match.traveler.fullName ?? "Traveler"}
             travelerId={match.traveler.id}

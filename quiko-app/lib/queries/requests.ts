@@ -267,6 +267,7 @@ export async function acceptRequest(requestId: string, travelerId: string) {
         detourFee: detour.fee,
         detourSelfCollect: detour.selfCollect,
         status: "confirmed",
+        pickupOtp: genOtp(),
         deliveryOtp: genOtp(),
       })
       .returning();
@@ -374,6 +375,7 @@ export async function acceptOfferAsSender(requestId: string, senderId: string) {
         detourFee: detour.fee,
         detourSelfCollect: detour.selfCollect,
         status: "confirmed",
+        pickupOtp: genOtp(),
         deliveryOtp: genOtp(),
       })
       .returning();
@@ -438,6 +440,7 @@ export async function adminCreateMatch(
         detourFee: detour.fee,
         detourSelfCollect: detour.selfCollect,
         status: "confirmed",
+        pickupOtp: genOtp(),
         deliveryOtp: genOtp(),
       })
       .returning();

@@ -138,7 +138,7 @@ export async function payForMatch(matchId: string, senderId: string): Promise<Pa
         profileId: m.travelerId,
         type: "paid",
         title: "Payment secured 🔒",
-        body: "The sender paid into escrow — go pick up the package.",
+        body: "The sender paid into escrow — go pick up the package and get their pickup OTP.",
         href: `/app/travel/trips/${m.tripId}`,
       });
       return { ok: true };
@@ -232,6 +232,7 @@ export async function advanceMatchAsTraveler(
   travelerId: string,
   to: "picked_up" | "in_transit",
   photo?: string,
+  otp?: string,
 ): Promise<Result> {
   if (photo) {
     const err = validatePhoto(photo);
@@ -244,6 +245,12 @@ export async function advanceMatchAsTraveler(
       return { ok: false, error: "Waiting for the sender to pay" };
     if (to === "in_transit" && m.status !== "picked_up")
       return { ok: false, error: "Mark pickup first" };
+    // Hand-over proof: the sender reads out the pickup OTP only once the package
+    // is physically with the traveller, so a pickup can't be self-declared.
+    // Matches created before pickup OTPs existed carry none — those stay on the
+    // old photo-only flow rather than becoming impossible to progress.
+    if (to === "picked_up" && m.pickupOtp && m.pickupOtp !== (otp ?? "").trim())
+      return { ok: false, error: "Incorrect pickup OTP" };
     await tx
       .update(matches)
       .set({ status: to, updatedAt: new Date(), ...(to === "picked_up" && photo ? { pickupPhotoUrl: photo } : {}) })

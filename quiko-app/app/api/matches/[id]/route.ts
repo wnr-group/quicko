@@ -18,7 +18,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     status: row.match.status,
     price: row.match.agreedPrice,
     weightKg: row.package.weightKg,
-    // Only the sender shares the OTP; the traveller enters what the receiver gives them.
+    // Only the sender holds the OTPs — they read the pickup code out at hand-off,
+    // and pass the delivery code to the receiver. The traveller enters both.
+    pickupOtp: row.role === "sender" ? row.match.pickupOtp ?? "" : "",
     otp: row.role === "sender" ? row.match.deliveryOtp ?? "" : "",
     receiverName: row.package.receiverName,
     receiverPhone: row.package.receiverPhone,

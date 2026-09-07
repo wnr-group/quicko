@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Button, Card, Header } from "@/components/ui";
 import { QuickNav } from "@/components/QuickNav";
-import { api, MatchDetail, MatchStatus, MOCK_OTP } from "@/lib/api";
+import { api, MatchDetail, MatchStatus, MOCK_OTP, MOCK_PICKUP_OTP } from "@/lib/api";
 import { colors, radius } from "@/lib/theme";
 import { inr } from "@core/format";
 import { splitPayment } from "@core/pricing";
@@ -24,6 +24,7 @@ export default function MatchScreen() {
   const [m, setM] = useState<MatchDetail | null>(null);
   const [status, setStatus] = useState<MatchStatus>("confirmed");
   const [otp, setOtp] = useState("");
+  const [pickupOtp, setPickupOtp] = useState("");
   const [stars, setStars] = useState(5);
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState(false);
@@ -56,6 +57,10 @@ export default function MatchScreen() {
       const r = await fn();
       if (!r.ok) setError(r.error);
       else if (next) setStatus(next);
+    } catch (e) {
+      // The real API signals rejections (wrong OTP, capacity, …) with a non-2xx
+      // that req() throws — surface it instead of failing silently.
+      setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
       setBusy(false);
     }
@@ -109,6 +114,13 @@ export default function MatchScreen() {
             <Button title={`Pay ${inr(m.price)} securely`} loading={busy} onPress={() => act(() => api.payForMatch(m.id), "paid")} />
           </Card>
         )}
+        {isSender && status === "paid" && !!m.pickupOtp && (
+          <View style={styles.otpShare}>
+            <Text style={styles.otpShareLabel}>Pickup OTP — give this to the traveller at hand-off</Text>
+            <Text style={styles.otpShareCode}>{m.pickupOtp}</Text>
+            <Text style={styles.otpShareNote}>Only read it out once the package is physically with them.</Text>
+          </View>
+        )}
         {isSender && (status === "paid" || status === "picked_up" || status === "in_transit") && (
           <>
             <View style={styles.otpShare}>
@@ -117,7 +129,7 @@ export default function MatchScreen() {
             </View>
             <Card>
               <Text style={styles.muted}>
-                {status === "paid" ? `${m.counterpartName} will pick up your package soon.`
+                {status === "paid" ? `${m.counterpartName} will collect your package — share the pickup OTP at hand-off.`
                   : status === "picked_up" ? "Picked up — on the way to your receiver."
                   : "In transit. Your receiver gives the OTP to the traveller on hand-off."}
               </Text>
@@ -146,9 +158,25 @@ export default function MatchScreen() {
         )}
         {!isSender && status === "paid" && (
           <Card>
-            <Text style={styles.muted}>Payment secured 🔒 — pick it up from {m.fromCity}.</Text>
-            <View style={{ height: 12 }} />
-            <Button title="Mark picked up" loading={busy} onPress={() => act(() => api.advanceMatch(m.id, "picked_up"), "picked_up")} />
+            <Text style={styles.cardH}>Confirm pickup</Text>
+            <Text style={styles.muted}>
+              Payment secured 🔒 — collect it from {m.fromCity}, then enter the pickup OTP {m.counterpartName} gives you.
+            </Text>
+            <TextInput
+              value={pickupOtp} onChangeText={(t) => setPickupOtp(t.replace(/\D/g, "").slice(0, 4))}
+              keyboardType="number-pad" placeholder="Pickup OTP"
+              style={[styles.input, styles.otpInput]}
+            />
+            <View style={{ height: 8 }} />
+            <Button
+              title="Confirm pickup" loading={busy} disabled={pickupOtp.length < 4}
+              onPress={() => act(async () => {
+                const r = await api.advanceMatch(m.id, "picked_up", pickupOtp);
+                if (r.ok) return r;
+                return { ok: false as const, error: "error" in r ? r.error : "Incorrect pickup OTP" };
+              }, "picked_up")}
+            />
+            <Text style={styles.hint}>Mock pickup OTP for demo: {MOCK_PICKUP_OTP}</Text>
           </Card>
         )}
         {!isSender && status === "picked_up" && (
@@ -210,7 +238,8 @@ const styles = StyleSheet.create({
   stageLabel: { fontWeight: "700" },
   error: { color: colors.error, fontWeight: "600" },
   otpShare: { backgroundColor: colors.ink, borderRadius: radius.xl, padding: 16, alignItems: "center" },
-  otpShareLabel: { color: "rgba(255,217,61,0.7)", fontSize: 12, fontWeight: "600", textTransform: "uppercase" },
+  otpShareLabel: { color: "rgba(255,217,61,0.7)", fontSize: 12, fontWeight: "600", textTransform: "uppercase", textAlign: "center" },
+  otpShareNote: { color: "rgba(255,255,255,0.6)", fontSize: 12, marginTop: 4, textAlign: "center" },
   otpShareCode: { color: colors.brand, fontSize: 34, fontWeight: "900", letterSpacing: 10, marginTop: 4 },
   stars: { flexDirection: "row", justifyContent: "center", gap: 8, paddingVertical: 6 },
   input: { borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, backgroundColor: colors.white },

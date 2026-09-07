@@ -47,12 +47,12 @@ const WAITING: Record<string, { title: string; body: (name: string) => string }>
 type Res = { ok: true } | { ok: false; error: string };
 
 export function MatchFlow({
-  packageId, matchId, status, price, otp, travelerName, travelerId, hasReceiver, route,
+  packageId, matchId, status, price, pickupOtp, otp, travelerName, travelerId, hasReceiver, route,
   detourKm, detourFee, detourOptedOut, detourSelfCollect,
   pickupPhotoUrl, deliveryPhotoUrl, disputeRaisedByMe,
 }: {
   packageId: string; matchId: string; status: string;
-  price: number; otp: string; travelerName: string; travelerId: string; hasReceiver: boolean; route: string;
+  price: number; pickupOtp: string; otp: string; travelerName: string; travelerId: string; hasReceiver: boolean; route: string;
   detourKm: number; detourFee: number; detourOptedOut: boolean; detourSelfCollect: boolean;
   pickupPhotoUrl: string | null; deliveryPhotoUrl: string | null; disputeRaisedByMe: boolean;
 }) {
@@ -286,9 +286,17 @@ export function MatchFlow({
         </Panel>
       )}
 
+      {status === "paid" && pickupOtp && (
+        <OtpShare
+          otp={pickupOtp}
+          label="Pickup OTP — give this to the traveller at hand-off"
+          note="Only read it out once the package is physically with them."
+        />
+      )}
+
       {(status === "paid" || status === "picked_up" || status === "in_transit") && (
         <>
-          <OtpShare otp={otp} />
+          <OtpShare otp={otp} label="Delivery OTP — give this to your receiver" />
           <Panel>
             <p className="text-sm font-semibold">{WAITING[status].title}</p>
             <p className="text-sm text-gray-600">{WAITING[status].body(travelerName)}</p>
@@ -376,13 +384,12 @@ function Toggle({ on, onClick, disabled }: { on: boolean; onClick: () => void; d
     </button>
   );
 }
-function OtpShare({ otp }: { otp: string }) {
+function OtpShare({ otp, label, note }: { otp: string; label: string; note?: string }) {
   return (
     <div className="rounded-3xl bg-ink px-5 py-4 text-center">
-      <div className="text-[12px] font-medium uppercase tracking-wide text-brand/70">
-        Delivery OTP — give this to your receiver
-      </div>
+      <div className="text-[12px] font-medium uppercase tracking-wide text-brand/70">{label}</div>
       <div className="mt-1 text-3xl font-black tracking-[0.35em] text-brand">{otp}</div>
+      {note && <div className="mt-1 text-[12px] leading-snug text-white/60">{note}</div>}
     </div>
   );
 }
