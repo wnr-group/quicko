@@ -7,6 +7,7 @@ import { notify } from "@/lib/queries/notifications";
 import { logAdminAction } from "@/lib/queries/audit";
 import { detourKm, detourTier } from "@/core/geo";
 import { detourFee } from "@/core/pricing";
+import { VERIFIED_LEVEL } from "@/lib/queries/kyc";
 import type { Role } from "@/core/types";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -55,6 +56,56 @@ export async function suspendedError(
     .limit(1);
   if (!p) return `This ${who}'s account no longer exists.`;
   return p.status === "suspended" ? `This ${who}'s account is suspended.` : null;
+}
+
+/**
+ * Only an identity-verified traveller may be paired with a package — someone
+ * else's property and the escrowed payment both pass through their hands, and a
+ * phone number alone doesn't say who took the parcel.
+ *
+ * Enforced on BOTH request directions (the sender asking a traveller, and the
+ * traveller offering to carry) and again at accept, where the match and the
+ * delivery OTP are actually minted.
+ *
+ * The level on `profiles` is the source of truth, never the kyc_verifications
+ * row: an admin force-verify (`lib/queries/adminOps.ts`) raises the level
+ * without writing a submission.
+ */
+function verificationError(kycLevel: number | undefined, self: boolean): string | null {
+  if (kycLevel === undefined) return "This traveller's account no longer exists.";
+  if (kycLevel >= VERIFIED_LEVEL) return null;
+  // `self` covers both offering to carry and accepting a request — the same
+  // person is the traveller either way, so the wording has to fit both.
+  return self
+    ? "Verify your identity before you can carry a package."
+    : "This traveller hasn't verified their identity yet.";
+}
+
+/** Verification check inside a transaction (accept paths). */
+export async function unverifiedTravellerError(
+  tx: Tx,
+  travelerId: string,
+  self = false,
+): Promise<string | null> {
+  const [p] = await tx
+    .select({ kycLevel: profiles.kycLevel })
+    .from(profiles)
+    .where(eq(profiles.id, travelerId))
+    .limit(1);
+  return verificationError(p?.kycLevel, self);
+}
+
+/** Same rule for server actions and API routes, which have no transaction. */
+export async function travellerVerificationError(
+  travelerId: string,
+  self = false,
+): Promise<string | null> {
+  const [p] = await db
+    .select({ kycLevel: profiles.kycLevel })
+    .from(profiles)
+    .where(eq(profiles.id, travelerId))
+    .limit(1);
+  return verificationError(p?.kycLevel, self);
 }
 
 /**
@@ -253,6 +304,9 @@ export async function acceptRequest(requestId: string, travelerId: string) {
     const senderGone = await suspendedError(tx, pkg.senderId, "sender");
     if (senderGone) throw new Error(senderGone);
 
+    const unverified = await unverifiedTravellerError(tx, travelerId, true);
+    if (unverified) throw new Error(unverified);
+
     const base = req.counterAmount ?? req.amount;
     const detour = matchDetour(pkg, trip);
     const [match] = await tx
@@ -361,6 +415,9 @@ export async function acceptOfferAsSender(requestId: string, senderId: string) {
     const travellerGone = await suspendedError(tx, trip.travelerId, "traveller");
     if (travellerGone) throw new Error(travellerGone);
 
+    const unverified = await unverifiedTravellerError(tx, trip.travelerId);
+    if (unverified) throw new Error(unverified);
+
     const base = req.counterAmount ?? req.amount;
     const detour = matchDetour(pkg, trip);
     const [match] = await tx
@@ -425,6 +482,8 @@ export async function adminCreateMatch(
       const gone = await suspendedError(tx, id, who);
       if (gone) return { ok: false, error: gone };
     }
+    const unverified = await unverifiedTravellerError(tx, trip.travelerId);
+    if (unverified) return { ok: false, error: unverified };
 
     const base = pkg.offerPrice ?? pkg.maxPrice ?? 0;
     const detour = matchDetour(pkg, trip);

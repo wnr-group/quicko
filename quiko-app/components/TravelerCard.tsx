@@ -82,14 +82,21 @@ export function TravelerCard({
 
       <button
         onClick={request}
-        disabled={requested || pending}
+        disabled={requested || pending || !verified}
         className={`mt-3 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-[15px] font-semibold transition-all active:scale-[0.98] ${
           requested ? "bg-success-soft text-success" : "bg-ink text-white hover:bg-ink-soft disabled:opacity-50"
         }`}
       >
         {requested ? (<><IconCheck width={18} height={18} /> Request sent</>)
+          : !verified ? "Identity not verified"
           : pending ? "Sending…" : `Request for ${inr(amount)}`}
       </button>
+      {!verified && !requested && (
+        <p className="mt-1.5 text-center text-[12px] leading-snug text-muted">
+          This traveller hasn&rsquo;t finished identity verification, so they can&rsquo;t
+          carry packages yet.
+        </p>
+      )}
     </div>
   );
 }

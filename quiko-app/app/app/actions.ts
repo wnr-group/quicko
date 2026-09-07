@@ -29,6 +29,7 @@ import {
   capacityError,
   selfMatchError,
   pendingRequestOverCapacity,
+  travellerVerificationError,
 } from "@/lib/queries/requests";
 import {
   payForMatch,
@@ -174,6 +175,8 @@ export async function createFromExploreAction(
     if (isSelf) return { ok: false as const, error: isSelf };
     const tooHeavy = capacityError(parsed.data.weightKg, chosen.capacityKg);
     if (tooHeavy) return { ok: false as const, error: tooHeavy };
+    const unverified = await travellerVerificationError(chosen.travelerId);
+    if (unverified) return { ok: false as const, error: unverified };
   }
 
   const pkg = await createPackage(user.id, parsed.data);
@@ -281,6 +284,8 @@ export async function sendRequestAction(params: {
   if (isSelf) return { ok: false, error: isSelf };
   const tooHeavy = capacityError(pkg.weightKg, trip.capacityKg);
   if (tooHeavy) return { ok: false, error: tooHeavy };
+  const unverified = await travellerVerificationError(trip.travelerId);
+  if (unverified) return { ok: false, error: unverified };
 
   await sendRequest({
     packageId: params.packageId,
@@ -358,6 +363,9 @@ export async function offerToCarryAction(
   if (isSelf) return { ok: false, error: isSelf };
   const tooHeavy = capacityError(pkg.weightKg, trip.capacityKg);
   if (tooHeavy) return { ok: false, error: tooHeavy };
+  // The offering traveller is the one who'd carry it — verify them, not the sender.
+  const unverified = await travellerVerificationError(user.id, true);
+  if (unverified) return { ok: false, error: unverified };
   await sendRequest({
     packageId,
     tripId,

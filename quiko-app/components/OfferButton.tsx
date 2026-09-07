@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { IconCheck } from "@/components/icons";
 import { inr } from "@/core/format";
@@ -10,10 +11,12 @@ export function OfferButton({
   tripId,
   packageId,
   price,
+  verified,
 }: {
   tripId: string;
   packageId: string;
   price: number;
+  verified: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -38,6 +41,17 @@ export function OfferButton({
       <div className="mt-3 flex items-center justify-center gap-1.5 rounded-2xl bg-success-soft py-3 text-[15px] font-semibold text-success">
         <IconCheck width={16} height={16} /> Offer sent
       </div>
+    );
+  }
+
+  if (!verified) {
+    return (
+      <Link
+        href="/app/verify"
+        className="mt-3 flex w-full items-center justify-center rounded-2xl border border-line bg-white py-3.5 text-[15px] font-semibold text-ink active:scale-[0.98]"
+      >
+        Verify your identity to carry
+      </Link>
     );
   }
 

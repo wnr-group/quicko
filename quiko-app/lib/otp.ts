@@ -12,12 +12,26 @@ import "server-only";
  * profile — otherwise they silently end up with duplicate accounts holding
  * separate packages, trips, ratings and wallet balances.
  */
+const INDIAN_MOBILE = /^[6-9]\d{9}$/;
+
 export function normalizePhone(input: string): string {
-  let d = input.replace(/\D/g, "");
+  const digits = input.replace(/\D/g, "");
+  let d = digits;
   if (d.startsWith("00")) d = d.slice(2); // 00 international prefix
-  if (d.length === 11 && d.startsWith("0")) d = d.slice(1); // national trunk prefix
-  if (d.length === 10 && /^[6-9]/.test(d)) d = `91${d}`; // bare Indian mobile
-  return d;
+  // Peel country-code and trunk prefixes until a bare 10-digit mobile is left.
+  // A single pass isn't enough: the login field is pre-filled with "+91", so a
+  // user pasting their own "919000000003" over it submits "91919000000003" and
+  // silently lands on a SECOND profile. Looping folds "+91 91900…", "+91 0 900…"
+  // and "0091 900…" onto the same identity.
+  while (!INDIAN_MOBILE.test(d) && d.length > 10) {
+    if (d.startsWith("91")) d = d.slice(2);
+    else if (d.startsWith("0")) d = d.slice(1);
+    else break; // not an Indian number — leave it alone
+  }
+  // Only rewrite when the peeling actually produced a valid mobile. Anything
+  // else (a foreign number, a malformed one) is returned exactly as typed, so
+  // existing accounts keyed on an odd string keep working.
+  return INDIAN_MOBILE.test(d) ? `91${d}` : digits;
 }
 
 interface OtpProvider {

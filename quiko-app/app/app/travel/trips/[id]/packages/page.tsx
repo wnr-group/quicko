@@ -3,10 +3,11 @@ import { PhoneFrame } from "@/components/PhoneFrame";
 import { TopBar } from "@/components/ui";
 import { OfferButton } from "@/components/OfferButton";
 import { IconArrowRight, IconStar, IconWeight, IconPackage } from "@/components/icons";
-import { requireUser } from "@/lib/auth";
+import { requireUser, getProfile } from "@/lib/auth";
 import { getOwnedTrip } from "@/lib/queries/trips";
 import { explorePackages } from "@/lib/queries/packages";
 import { inr, dateShort, initials } from "@/core/format";
+import { VERIFIED_LEVEL } from "@/lib/queries/kyc";
 
 const SPEED_LABELS: Record<string, string> = {
   same_day: "Same day",
@@ -21,8 +22,11 @@ export default async function TripPackagesPage({
 }) {
   const { id } = await params;
   const user = await requireUser();
-  const trip = await getOwnedTrip(id, user.id);
+  const [trip, profile] = await Promise.all([getOwnedTrip(id, user.id), getProfile()]);
   if (!trip) notFound();
+  // An unverified traveller may browse, but may not offer — the server rejects
+  // it anyway (offerToCarryAction), so say so on the button instead.
+  const verified = (profile?.kycLevel ?? 1) >= VERIFIED_LEVEL;
 
   const matches =
     trip.fromLat != null && trip.fromLng != null && trip.toLat != null && trip.toLng != null
@@ -94,7 +98,7 @@ export default async function TripPackagesPage({
                     <span>{dateShort(pkg.travelDate)}</span>
                   </div>
 
-                  <OfferButton tripId={trip.id} packageId={pkg.id} price={pkg.offerPrice} />
+                  <OfferButton tripId={trip.id} packageId={pkg.id} price={pkg.offerPrice} verified={verified} />
                 </div>
               ))}
             </div>
