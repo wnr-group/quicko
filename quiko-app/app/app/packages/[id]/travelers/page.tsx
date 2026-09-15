@@ -59,7 +59,7 @@ export default async function TravelersPage({
         </div>
 
         {found.length === 0 ? (
-          <div className="mt-10 rounded-3xl border border-dashed border-line bg-white/60 p-8 text-center">
+          <div className="mt-10 rounded-3xl border-2 border-dashed border-line-strong bg-surface p-8 text-center">
             <p className="text-sm text-muted">
               No travelers on this route yet. We&rsquo;ll notify you when one posts
               a matching trip.
@@ -73,12 +73,12 @@ export default async function TravelersPage({
             <TravelerFilters transport={transport} />
 
             {trips.length === 0 ? (
-              <div className="mt-4 rounded-3xl border border-dashed border-line bg-white/60 p-8 text-center">
+              <div className="mt-4 rounded-3xl border-2 border-dashed border-line-strong bg-surface p-8 text-center">
                 <p className="text-sm text-muted">No travellers match these filters — try widening them.</p>
               </div>
             ) : (
               <>
-                <p className="mb-2 px-1 text-[13px] font-bold uppercase tracking-wide text-muted">
+                <p className="mb-2 px-1 text-[13px] font-bold uppercase tracking-wide text-ink">
                   {trips.length} traveler{trips.length > 1 ? "s" : ""} on your route
                 </p>
                 <div className="flex flex-col gap-3">

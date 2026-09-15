@@ -53,7 +53,7 @@ function ChipRow({ options, value, onPick }: { options: { value: string; label: 
           key={o.value}
           onClick={() => onPick(o.value)}
           className={`shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-semibold ${
-            value === o.value ? "bg-ink text-white" : "bg-white text-ink shadow-card"
+            value === o.value ? "bg-brand text-ink" : "bg-canvas text-ink shadow-card"
           }`}
         >
           {o.label}

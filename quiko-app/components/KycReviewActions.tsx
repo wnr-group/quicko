@@ -30,7 +30,7 @@ export function KycReviewActions({ kycId }: { kycId: string }) {
             className="w-full rounded-xl border border-line px-3 py-2.5 text-[14px] outline-none focus:border-ink" />
           <div className="flex gap-2">
             <button disabled={pending} onClick={() => setRejecting(false)}
-              className="flex-1 rounded-xl bg-neutral-100 py-2.5 text-[14px] font-semibold text-ink disabled:opacity-40">
+              className="flex-1 rounded-xl bg-surface py-2.5 text-[14px] font-semibold text-ink disabled:opacity-40">
               Cancel
             </button>
             <button disabled={pending} onClick={() => run(() => rejectKycAction(kycId, reason))}
@@ -42,7 +42,7 @@ export function KycReviewActions({ kycId }: { kycId: string }) {
       ) : (
         <div className="flex gap-2">
           <button disabled={pending} onClick={() => setRejecting(true)}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-neutral-100 py-2.5 text-[14px] font-semibold text-ink disabled:opacity-40">
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-surface py-2.5 text-[14px] font-semibold text-ink disabled:opacity-40">
             <IconX width={15} height={15} /> Reject
           </button>
           <button disabled={pending} onClick={() => run(() => approveKycAction(kycId))}

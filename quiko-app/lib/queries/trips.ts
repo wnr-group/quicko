@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, gte, lte, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lte, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { trips, profiles, matches, packages } from "@/db/schema";
 import { routeMatches } from "@/core/geo";
@@ -175,11 +175,32 @@ export async function createTrip(travelerId: string, input: CreateTripInput) {
 }
 
 export async function getMyTrips(travelerId: string) {
-  return db
+  const rows = await db
     .select()
     .from(trips)
     .where(eq(trips.travelerId, travelerId))
     .orderBy(desc(trips.travelDate));
+  if (rows.length === 0) return [];
+
+  // Same rule as exploreTrips: the card must show capacity LEFT, not the
+  // capacity the trip started with, or it advertises committed space.
+  const booked = await db
+    .select({ tripId: matches.tripId, kg: sql<string>`sum(${packages.weightKg})` })
+    .from(matches)
+    .innerJoin(packages, eq(packages.id, matches.packageId))
+    .where(
+      and(
+        inArray(
+          matches.tripId,
+          rows.map((t) => t.id),
+        ),
+        ne(matches.status, "cancelled"),
+      ),
+    )
+    .groupBy(matches.tripId);
+
+  const used = new Map(booked.map((b) => [b.tripId, Number(b.kg)]));
+  return rows.map((t) => ({ ...t, spareKg: t.capacityKg - (used.get(t.id) ?? 0) }));
 }
 
 export async function getOwnedTrip(id: string, travelerId: string) {

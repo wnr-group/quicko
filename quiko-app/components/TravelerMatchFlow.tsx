@@ -5,7 +5,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { inr } from "@/core/format";
 import { splitPayment } from "@/core/pricing";
-import { IconCheck, IconMapPin, IconArrowRight, IconChat } from "@/components/icons";
+import { IconCheck, IconMapPin, IconChat, IconPackage } from "@/components/icons";
+import { KindChip, RouteTimeline } from "@/components/RouteCard";
 import { PhotoCapture } from "@/components/PhotoCapture";
 import { CancelMatchButton } from "@/components/CancelMatchButton";
 import { advanceMatchAction, confirmDeliveryAction, withdrawDisputeAction } from "@/app/app/actions";
@@ -40,17 +41,18 @@ export function TravelerMatchFlow({
   }
 
   return (
-    <div className="rounded-3xl bg-white p-4 shadow-card">
-      {/* package header */}
-      <div className="flex items-center gap-1.5 font-bold">
-        <span className="truncate">{fromCity}</span>
-        <IconArrowRight width={15} height={15} className="shrink-0 text-muted" />
-        <span className="truncate">{toCity}</span>
+    <div className="rounded-3xl border-l-2 border-brand bg-canvas p-4 shadow-card">
+      <div className="mb-2.5 flex items-center gap-2">
+        <KindChip icon={<IconPackage width={13} height={13} strokeWidth={2.25} />} label="Package" />
+        <span className="ml-auto shrink-0 text-[15px] font-black">{inr(earn)}</span>
       </div>
-      <div className="text-[13px] text-muted">{weight}kg · from {senderName} · you earn {inr(earn)}</div>
+      <RouteTimeline from={fromCity} to={toCity} />
+      <div className="mt-3 border-t border-line pt-2.5 text-[13px] text-muted">
+        {weight}kg · from {senderName}
+      </div>
 
       <Link href={`/app/chat/${matchId}`}
-        className="mt-3 flex items-center justify-center gap-1.5 rounded-2xl bg-neutral-100 py-2.5 text-[14px] font-semibold text-ink active:scale-[0.98]">
+        className="mt-3 flex items-center justify-center gap-1.5 rounded-2xl bg-surface py-2.5 text-[14px] font-semibold text-ink active:scale-[0.98]">
         <IconChat width={16} height={16} /> Message {senderName}
       </Link>
 
@@ -149,7 +151,7 @@ export function TravelerMatchFlow({
 
 function Info({ tone, children }: { tone: "wait" | "go"; children: React.ReactNode }) {
   return (
-    <p className={`rounded-xl px-3 py-2.5 text-[13px] font-medium ${tone === "go" ? "bg-brand-soft text-ink" : "bg-neutral-100 text-muted"}`}>
+    <p className={`rounded-xl px-3 py-2.5 text-[13px] font-medium ${tone === "go" ? "bg-brand-soft text-ink" : "bg-surface text-muted"}`}>
       {children}
     </p>
   );
@@ -158,7 +160,7 @@ function Info({ tone, children }: { tone: "wait" | "go"; children: React.ReactNo
 function Receiver({ name, phone }: { name: string | null; phone: string | null }) {
   if (!name) return null;
   return (
-    <div className="mt-2 flex items-center gap-2 rounded-xl bg-neutral-50 px-3 py-2.5 text-[13px]">
+    <div className="mt-2 flex items-center gap-2 rounded-xl bg-surface px-3 py-2.5 text-[13px]">
       <IconMapPin width={15} height={15} className="text-muted" />
       <span className="font-semibold">{name}</span>
       {phone && <a href={`tel:${phone}`} className="ml-auto font-semibold text-info">{phone}</a>}

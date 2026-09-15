@@ -2,11 +2,11 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { Button } from "@/components/ui";
-import { Card, Label, StepBtn } from "@/components/formkit";
-import { IconPlus, IconMinus, IconArrowRight } from "@/components/icons";
+import { Card, Label, StepBtn, StepHeader } from "@/components/formkit";
+import { IconPlus, IconMinus } from "@/components/icons";
 import { calculatePrice } from "@/core/pricing";
 import { roadDistanceKm } from "@/core/geo";
-import { dateShort } from "@/core/format";
+import { dateShort, placeShort } from "@/core/format";
 import { createFromExploreAction } from "@/app/app/actions";
 import type { SendParams } from "@/lib/sendParams";
 
@@ -58,17 +58,21 @@ export function ExploreDetailsForm({
 
   return (
     <div className="flex flex-1 flex-col">
+      <StepHeader step={3} total={3} label={notify ? "Package details" : "Confirm & request"} />
       <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-5">
         {/* Route + traveler summary */}
         <Card>
-          <div className="flex items-center gap-1.5 text-[15px] font-bold">
-            <span className="truncate">{params.from.label}</span>
-            <IconArrowRight width={15} height={15} className="shrink-0 text-muted" />
-            <span className="truncate">{params.to.label}</span>
+          <div className="truncate text-[15px] font-bold">
+            {placeShort(params.from.label)}{" "}
+            <span className="font-normal text-muted">&rarr;</span>{" "}
+            {placeShort(params.to.label)}
           </div>
+          <p className="mt-1 text-[13px] leading-snug text-ink-soft">
+            {params.from.label} &rarr; {params.to.label}
+          </p>
           <div className="mt-1 text-[13px] text-muted">Arrive {dateLabel}</div>
           {tripId && travelerName && (
-            <div className="mt-3 rounded-2xl bg-brand-soft px-3.5 py-2.5">
+            <div className="mt-3 rounded-2xl bg-brand px-3.5 py-2.5">
               <div className="text-[13px] font-bold text-ink">Requesting {travelerName}</div>
               {travelerWhen && <div className="text-[12px] text-ink-soft">{travelerWhen}</div>}
             </div>

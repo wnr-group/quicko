@@ -3,17 +3,11 @@ import { notFound } from "next/navigation";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { TopBar } from "@/components/ui";
 import { StatusBadge } from "@/components/StatusBadge";
+import { RouteTimeline } from "@/components/RouteCard";
 import { DeletePackageButton } from "@/components/DeletePackageButton";
 import { SenderRequestActions } from "@/components/SenderRequestActions";
 import { MatchFlow } from "@/components/MatchFlow";
-import {
-  IconArrowRight,
-  IconChevronRight,
-  IconPackage,
-  IconPlane,
-  IconEdit,
-  TRANSPORT_ICONS,
-} from "@/components/icons";
+import { IconChevronRight, IconPackage, IconPlane, IconEdit, TRANSPORT_ICONS } from "@/components/icons";
 import { requireUser } from "@/lib/auth";
 import { getOwnedPackage } from "@/lib/queries/packages";
 import { getRequestsForPackage, getMatchForPackage, getCancelledMatchesForPackage } from "@/lib/queries/requests";
@@ -53,31 +47,42 @@ export default async function PackageDetailPage({
   );
   const dateLabel =
     pkg.dateTo && pkg.dateTo !== pkg.travelDate
-      ? `${pkg.travelDate} → ${pkg.dateTo}`
-      : pkg.travelDate;
+      ? `${dateShort(pkg.travelDate)} → ${dateShort(pkg.dateTo)}`
+      : dateShort(pkg.travelDate);
 
   return (
     <PhoneFrame>
       <TopBar title="Package" back />
       <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-8">
-        {/* Summary */}
-        <div className="rounded-3xl bg-white p-5 shadow-card">
-          <div className="flex items-start gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-soft text-ink">
-              <IconPackage width={20} height={20} />
+        {/* Summary — yellow fill marks this page as a PACKAGE; the trip page
+            uses a black-outlined white hero so the two never read alike. */}
+        <div className="rounded-3xl bg-brand p-5 shadow-brand">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-ink px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-brand">
+              <IconPackage width={13} height={13} strokeWidth={2.25} /> Package
             </span>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5 text-lg font-bold">
-                <span className="truncate">{pkg.fromCity}</span>
-                <IconArrowRight width={16} height={16} className="shrink-0 text-muted" />
-                <span className="truncate">{pkg.toCity}</span>
-              </div>
-              <div className="text-[13px] text-muted">{dateLabel}</div>
-            </div>
-            <StatusBadge status={pkg.status} />
+            <span className="ml-auto shrink-0">
+              <StatusBadge status={pkg.status} />
+            </span>
           </div>
+          {/* The arrival date hangs off the destination, and the figures sit in
+              tiles — a stack of divider rows read as a bare table. */}
+          <RouteTimeline
+            from={pkg.fromCity}
+            to={pkg.toCity}
+            size="lg"
+            onBrand
+            toMeta={
+              <span className="mt-1.5 inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-canvas px-2.5 py-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-wide text-muted">
+                  Arrive by
+                </span>
+                <span className="text-[14px] font-bold text-ink">{dateLabel}</span>
+              </span>
+            }
+          />
 
-          <dl className="mt-4 grid grid-cols-3 gap-2 border-t border-line pt-3 text-center">
+          <dl className="mt-4 grid grid-cols-3 gap-2">
             <Detail k="Weight" v={`${pkg.weightKg} kg`} />
             <Detail k="Speed" v={SPEED_LABELS[pkg.timePreference] ?? pkg.timePreference} />
             <Detail k="Your offer" v={inr(pkg.offerPrice)} />
@@ -86,7 +91,7 @@ export default async function PackageDetailPage({
 
         {/* Contents + receiver (once provided) */}
         {(pkg.description || pkg.receiverName) && (
-          <div className="mt-3 rounded-3xl bg-white p-5 shadow-card">
+          <div className="mt-3 rounded-3xl bg-canvas p-5 shadow-card">
             {pkg.description && (
               <div className={pkg.receiverName ? "mb-3" : ""}>
                 <dt className="text-[11px] font-bold uppercase tracking-wide text-muted">Contents</dt>
@@ -163,7 +168,7 @@ export default async function PackageDetailPage({
             {/* Offers from travelers — the sender accepts/declines these */}
             {offers.length > 0 && (
               <>
-                <h2 className="mb-2 mt-7 px-1 text-[13px] font-bold uppercase tracking-wide text-muted">
+                <h2 className="mb-2 mt-7 px-1 text-[13px] font-bold uppercase tracking-wide text-ink">
                   Offers to carry ({offers.length})
                 </h2>
                 <div className="flex flex-col gap-3">
@@ -172,7 +177,7 @@ export default async function PackageDetailPage({
                       ? TRANSPORT_ICONS[trip.transport] ?? IconPackage
                       : IconPackage;
                     return (
-                      <div key={request.id} className="rounded-3xl bg-white p-4 shadow-card">
+                      <div key={request.id} className="rounded-3xl bg-canvas p-4 shadow-card">
                         <div className="flex items-center gap-3">
                           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ink text-xs font-bold text-brand">
                             {initials(traveler?.fullName)}
@@ -200,12 +205,12 @@ export default async function PackageDetailPage({
               </>
             )}
 
-            <h2 className="mb-2 mt-7 px-1 text-[13px] font-bold uppercase tracking-wide text-muted">
+            <h2 className="mb-2 mt-7 px-1 text-[13px] font-bold uppercase tracking-wide text-ink">
               Requests ({sent.length})
             </h2>
 
             {sent.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-line bg-white/60 p-6 text-center text-sm text-muted">
+              <div className="rounded-2xl border-2 border-dashed border-line-strong bg-surface p-6 text-center text-sm text-muted">
                 No requests yet. Browse travelers and send one.
               </div>
             ) : (
@@ -213,7 +218,7 @@ export default async function PackageDetailPage({
                 {sent.map(({ request, traveler }) => (
                   <li
                     key={request.id}
-                    className="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-card"
+                    className="flex items-center gap-3 rounded-2xl bg-canvas p-3.5 shadow-card"
                   >
                     <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ink text-xs font-bold text-brand">
                       {initials(traveler?.fullName)}
@@ -235,20 +240,20 @@ export default async function PackageDetailPage({
         {/* Cancelled history — a record of matches that fell through */}
         {cancelled.length > 0 && (
           <>
-            <h2 className="mb-2 mt-7 px-1 text-[13px] font-bold uppercase tracking-wide text-muted">
+            <h2 className="mb-2 mt-7 px-1 text-[13px] font-bold uppercase tracking-wide text-ink">
               Cancelled ({cancelled.length})
             </h2>
             <div className="flex flex-col gap-2">
               {cancelled.map((c) => (
                 <div key={c.match.id} className="flex items-center gap-3 rounded-2xl bg-white/70 p-3.5 shadow-card">
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-neutral-100 text-[11px] font-bold text-muted">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface text-[11px] font-bold text-muted">
                     {initials(c.traveler.fullName)}
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-[14px] font-semibold">{c.traveler.fullName ?? "Traveller"}</div>
                     <div className="text-[12px] text-muted">{inr(c.match.agreedPrice)} · {timeAgo(c.match.updatedAt)}</div>
                   </div>
-                  <span className="shrink-0 rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-bold uppercase text-muted">Cancelled</span>
+                  <span className="shrink-0 rounded-full bg-surface px-2 py-0.5 text-[11px] font-bold uppercase text-muted">Cancelled</span>
                 </div>
               ))}
             </div>
@@ -259,11 +264,15 @@ export default async function PackageDetailPage({
   );
 }
 
+/** One figure as a tile. White on the yellow hero, so the numbers read as
+ *  distinct values rather than rows of a table. */
 function Detail({ k, v }: { k: string; v: string }) {
   return (
-    <div>
-      <dt className="text-[11px] font-bold uppercase tracking-wide text-muted">{k}</dt>
-      <dd className="mt-0.5 text-[14px] font-bold">{v}</dd>
+    <div className="rounded-2xl bg-canvas px-2 py-2.5 text-center">
+      <dt className="text-[11px] font-bold uppercase leading-tight tracking-wide text-muted">
+        {k}
+      </dt>
+      <dd className="mt-1 text-[15px] font-black leading-tight text-ink">{v}</dd>
     </div>
   );
 }

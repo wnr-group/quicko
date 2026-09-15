@@ -13,6 +13,24 @@ export function formatPhone(phone: string | null | undefined): string {
   return phone.startsWith("+") ? phone : `+${d}`;
 }
 
+/**
+ * Geocoded labels arrive as full addresses ("Coimbatore - Anaikatti Road,
+ * Coimbatore", "Athipet, Thiruvallur District, Tamil Nadu"). Keep the locality
+ * and the city it sits in, dropping street detail and the trailing state so a
+ * row stays one line without losing which place it means.
+ */
+export function placeShort(label: string | null | undefined): string {
+  if (!label) return "";
+  const parts = label.split(",").map((p) => p.trim()).filter(Boolean);
+  if (!parts.length) return label.trim();
+  // "Coimbatore - Anaikatti Road" -> "Coimbatore" (street detail after the dash)
+  const locality = parts[0].split(" - ")[0].trim();
+  // "Thiruvallur District" -> "Thiruvallur"
+  const city = (parts[1] ?? "").replace(/\s+District$/i, "").trim();
+  if (!city || city.toLowerCase() === locality.toLowerCase()) return locality;
+  return `${locality}, ${city}`;
+}
+
 /** "08:00" → "8:00 AM". */
 export function time12(hhmm: string | null | undefined): string {
   if (!hhmm) return "";

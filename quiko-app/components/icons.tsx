@@ -230,3 +230,58 @@ export const TRANSPORT_ICONS: Record<string, (p: IconProps) => React.ReactElemen
   bus: IconBus,
   car: IconCar,
 };
+
+/**
+ * Solid transport glyphs for small chips. The outline set is stroked at 1.75 on a
+ * 24 viewBox, so at chip size the stroke falls under one device pixel and a train,
+ * plane and bus blur into the same smudge. Filled shapes hold their silhouette.
+ * Windows and wheels are knocked out with evenodd rather than drawn.
+ */
+function SolidBase({ children, ...props }: IconProps & { children: React.ReactNode }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      fillRule="evenodd"
+      clipRule="evenodd"
+      width={16}
+      height={16}
+      aria-hidden="true"
+      {...props}
+    >
+      {children}
+    </svg>
+  );
+}
+
+export const IconPlaneSolid = (p: IconProps) => (
+  <SolidBase {...p}>
+    <path d="M13.5 2.2a1.5 1.5 0 0 0-3 0V9L2 14.2v2.3l8.5-2.7v4.4l-2.3 1.7v1.6l3.8-1.1 3.8 1.1v-1.6l-2.3-1.7v-4.4l8.5 2.7v-2.3L13.5 9V2.2z" />
+  </SolidBase>
+);
+
+export const IconTrainSolid = (p: IconProps) => (
+  <SolidBase {...p}>
+    <path d="M6 2h12a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3h-1l1.8 2.4a1 1 0 1 1-1.6 1.2L14.5 17h-5l-2.7 3.6a1 1 0 0 1-1.6-1.2L7 17H6a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3zm1 3a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h4V5H7zm6 0v5h4a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-4zM7.5 12.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm9 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z" />
+  </SolidBase>
+);
+
+export const IconBusSolid = (p: IconProps) => (
+  <SolidBase {...p}>
+    <path d="M5 2h14a3 3 0 0 1 3 3v10a3 3 0 0 1-2 2.83V20a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H7v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-2.17A3 3 0 0 1 2 15V5a3 3 0 0 1 3-3zm1 3a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H6zm.5 8a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm11 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z" />
+  </SolidBase>
+);
+
+export const IconCarSolid = (p: IconProps) => (
+  <SolidBase {...p}>
+    <path d="M6.3 5.2A2 2 0 0 1 8.2 4h7.6a2 2 0 0 1 1.9 1.2L19.4 9h.6a2 2 0 0 1 2 2v5a2 2 0 0 1-1 1.73V19a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H6v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-1.27A2 2 0 0 1 2 16v-5a2 2 0 0 1 2-2h.6l1.7-3.8zM8.6 6 7.3 9h9.4l-1.3-3H8.6zM6 12.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm12 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z" />
+  </SolidBase>
+);
+
+/** Filled set — use in chips and other small contexts. */
+export const TRANSPORT_ICONS_SOLID: Record<string, (p: IconProps) => React.ReactElement> = {
+  flight: IconPlaneSolid,
+  train: IconTrainSolid,
+  bus: IconBusSolid,
+  car: IconCarSolid,
+};

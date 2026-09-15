@@ -66,7 +66,7 @@ export function TourCarousel() {
         <span className="grid h-24 w-24 place-items-center rounded-[1.75rem] bg-brand text-ink shadow-brand">
           {slide.icon}
         </span>
-        <div className="mt-2 text-[13px] font-bold uppercase tracking-wide text-muted">
+        <div className="mt-2 text-[13px] font-bold uppercase tracking-wide text-ink">
           Step {i + 1} of {SLIDES.length}
         </div>
         <h1 className="mt-2 text-[26px] font-black tracking-tight">{slide.title}</h1>
@@ -77,11 +77,11 @@ export function TourCarousel() {
         <div className="mb-5 flex justify-center gap-1.5">
           {SLIDES.map((_, n) => (
             <span key={n}
-              className={`h-1.5 rounded-full transition-all ${n === i ? "w-6 bg-ink" : "w-1.5 bg-neutral-300"}`} />
+              className={`h-1.5 rounded-full transition-all ${n === i ? "w-6 bg-ink" : "w-1.5 bg-line-strong"}`} />
           ))}
         </div>
         <button onClick={next}
-          className="flex w-full items-center justify-center rounded-2xl bg-ink px-6 py-4 text-[15px] font-semibold text-white shadow-pop transition-transform active:scale-[0.98]">
+          className="flex w-full items-center justify-center rounded-2xl bg-brand px-6 py-4 text-[15px] font-bold tracking-tight text-ink shadow-brand transition-transform active:scale-[0.98] hover:bg-brand-strong">
           {last ? "Get Started" : "Next"}
         </button>
       </div>

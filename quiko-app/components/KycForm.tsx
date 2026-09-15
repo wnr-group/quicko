@@ -68,7 +68,7 @@ export function KycForm({
           {ID_TYPES.map((t) => (
             <button key={t.value} type="button" onClick={() => setIdType(t.value)}
               className={`rounded-xl border py-2.5 text-[14px] font-semibold transition-colors ${
-                idType === t.value ? "border-ink bg-ink text-white" : "border-line bg-white text-ink"
+                idType === t.value ? "border-ink bg-brand text-ink" : "border-line bg-canvas text-ink"
               }`}>
               {t.label}
             </button>
@@ -80,14 +80,14 @@ export function KycForm({
         <Label>ID number</Label>
         <input value={idNumber} onChange={(e) => setIdNumber(e.target.value)}
           placeholder="Number on your document" maxLength={40}
-          className="w-full rounded-xl border border-line bg-white px-3.5 py-3 text-[15px] outline-none focus:border-ink" />
+          className="w-full rounded-xl border border-line-strong bg-canvas px-3.5 py-3 text-[15px] outline-none focus:border-ink" />
       </Card>
 
       <Card>
         <Label>Name on ID</Label>
         <input value={legalName} onChange={(e) => setLegalName(e.target.value)}
           placeholder="Full name as printed" maxLength={80}
-          className="w-full rounded-xl border border-line bg-white px-3.5 py-3 text-[15px] outline-none focus:border-ink" />
+          className="w-full rounded-xl border border-line-strong bg-canvas px-3.5 py-3 text-[15px] outline-none focus:border-ink" />
       </Card>
 
       {error && <p className="rounded-xl bg-error-soft px-3 py-2 text-sm font-medium text-error">{error}</p>}
@@ -95,7 +95,7 @@ export function KycForm({
       <Button variant="brand" onClick={submit} disabled={!ready || pending}>
         {pending ? "Submitting…" : "Submit for verification"}
       </Button>
-      <p className="px-2 text-center text-[12px] leading-snug text-muted">
+      <p className="px-2 text-center text-[13px] leading-snug text-muted">
         Your ID is used only to verify your identity. In this build, submissions are
         reviewed manually.
       </p>
@@ -104,10 +104,10 @@ export function KycForm({
 }
 
 function Card({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-3xl bg-white p-4 shadow-card">{children}</div>;
+  return <div className="rounded-3xl bg-canvas p-4 shadow-card">{children}</div>;
 }
 function Label({ children }: { children: React.ReactNode }) {
-  return <span className="mb-2.5 block text-[13px] font-bold uppercase tracking-wide text-muted">{children}</span>;
+  return <span className="mb-2.5 block text-[13px] font-bold uppercase tracking-wide text-ink">{children}</span>;
 }
 function Banner({ tone, icon, title, children }: {
   tone: "ok" | "wait" | "bad"; icon: React.ReactNode; title: string; children: React.ReactNode;

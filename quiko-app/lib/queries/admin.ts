@@ -146,7 +146,15 @@ export async function getAdminUser(id: string) {
     db.select().from(matches).where(eq(matches.senderId, id)).orderBy(desc(matches.createdAt)).limit(50),
     db.select().from(matches).where(eq(matches.travelerId, id)).orderBy(desc(matches.createdAt)).limit(50),
   ]);
-  return { profile, packages: pkgs, trips: trps, matches: [...asSender, ...asTraveler] };
+  // A user can be both sides of the same match, so the two queries can return
+  // the same row twice — de-dupe before returning or the UI renders it twice.
+  const byId = new Map<string, (typeof asSender)[number]>();
+  for (const m of [...asSender, ...asTraveler]) byId.set(m.id, m);
+  const allMatches = [...byId.values()].sort(
+    (x, y) => new Date(y.createdAt).getTime() - new Date(x.createdAt).getTime(),
+  );
+
+  return { profile, packages: pkgs, trips: trps, matches: allMatches };
 }
 
 /** One match with full state: package, both parties, transactions, chat. */

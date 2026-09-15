@@ -3,12 +3,13 @@ import { PhoneFrame } from "@/components/PhoneFrame";
 import { NotificationBell } from "@/components/NotificationBell";
 import { BottomNav } from "@/components/BottomNav";
 import { StatusBadge } from "@/components/StatusBadge";
-import { IconPlus, IconArrowRight, IconPlane } from "@/components/icons";
-import { TRANSPORT_ICONS } from "@/components/icons";
+import { RouteCard } from "@/components/RouteCard";
+import { IconPlus, IconArrowRight, IconPackage } from "@/components/icons";
+import { TRANSPORT_ICONS_SOLID } from "@/components/icons";
 import { requireUser } from "@/lib/auth";
 import { getMyTrips } from "@/lib/queries/trips";
 import { getTravelerMatches, getTravelerWallet, countActiveMatches } from "@/lib/queries/matches";
-import { dateShort, timeWindow, inr } from "@/core/format";
+import { dateShort, timeWindow, inr, placeShort } from "@/core/format";
 
 export default async function TravelHome() {
   const user = await requireUser();
@@ -35,15 +36,15 @@ export default async function TravelHome() {
       <main className="no-scrollbar flex-1 overflow-y-auto px-5 pb-6">
         {/* Earnings summary → wallet */}
         <Link href="/app/wallet"
-          className="mt-2 flex items-center gap-3 rounded-3xl bg-ink p-4 text-white shadow-card active:scale-[0.99]">
+          className="mt-2 flex items-center gap-3 rounded-3xl bg-canvas p-4 shadow-card transition-transform active:scale-[0.99]">
           <div className="flex-1">
-            <div className="text-[12px] font-medium text-white/60">Total earned</div>
-            <div className="text-2xl font-black tracking-tight text-brand">{inr(wallet.earned)}</div>
+            <div className="text-[12px] font-bold uppercase tracking-wide text-muted">Total earned</div>
+            <div className="text-2xl font-black tracking-tight text-ink">{inr(wallet.earned)}</div>
             {wallet.pending > 0 && (
-              <div className="text-[12px] text-white/60">{inr(wallet.pending)} in escrow</div>
+              <div className="text-[12px] text-muted">{inr(wallet.pending)} in escrow</div>
             )}
           </div>
-          <span className="flex items-center gap-0.5 text-[13px] font-semibold text-brand">
+          <span className="flex items-center gap-0.5 text-[13px] font-semibold text-ink">
             Wallet <IconArrowRight width={15} height={15} />
           </span>
         </Link>
@@ -61,63 +62,65 @@ export default async function TravelHome() {
 
         {active.length > 0 && (
           <>
-            <h2 className="mb-2 mt-8 px-1 text-[13px] font-bold uppercase tracking-wide text-muted">
+            <h2 className="mb-2 mt-8 px-1 text-[13px] font-bold uppercase tracking-wide text-ink">
               Carrying now
             </h2>
             <ul className="flex flex-col gap-2.5">
               {active.map((c) => (
                 <li key={c.match.id}>
-                  <Link href={`/app/travel/trips/${c.match.tripId}`}
-                    className="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-card active:scale-[0.99]">
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-success-soft text-success text-sm font-bold">
-                      {inr(c.match.agreedPrice)}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 font-bold">
-                        <span className="truncate">{c.package.fromCity}</span>
-                        <IconArrowRight width={14} height={14} className="shrink-0 text-muted" />
-                        <span className="truncate">{c.package.toCity}</span>
-                      </div>
-                      <div className="text-[13px] text-muted">{c.package.weightKg}kg · from {c.sender.fullName}</div>
-                    </div>
-                    <StatusBadge status={c.match.status} />
-                  </Link>
+                  <RouteCard
+                    href={`/app/travel/trips/${c.match.tripId}`}
+                    from={placeShort(c.package.fromCity)}
+                    to={placeShort(c.package.toCity)}
+                    kind={{ icon: <IconPackage width={13} height={13} strokeWidth={2.25} />, label: "Package" }}
+                    amount={<span className="text-success">{inr(c.match.agreedPrice)}</span>}
+                    meta={
+                      <>
+                        <span className="rounded-md bg-brand px-1.5 py-0.5 text-[12px] font-bold text-ink">
+                          {c.package.weightKg}kg
+                        </span>
+                        {` · from ${c.sender.fullName}`}
+                      </>
+                    }
+                    badge={<StatusBadge status={c.match.status} />}
+                  />
                 </li>
               ))}
             </ul>
           </>
         )}
 
-        <h2 className="mb-2 mt-8 px-1 text-[13px] font-bold uppercase tracking-wide text-muted">
+        <h2 className="mb-2 mt-8 px-1 text-[13px] font-bold uppercase tracking-wide text-ink">
           Your trips
         </h2>
         {trips.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-line bg-white/60 p-6 text-center text-sm text-muted">
+          <div className="rounded-2xl border-2 border-dashed border-line-strong bg-surface p-6 text-center text-sm text-muted">
             No trips yet. Post one to start carrying packages.
           </div>
         ) : (
           <ul className="flex flex-col gap-2.5">
             {trips.map((t) => {
-              const Transport = TRANSPORT_ICONS[t.transport] ?? IconPlane;
+              const Transport = TRANSPORT_ICONS_SOLID[t.transport] ?? TRANSPORT_ICONS_SOLID.bus;
               return (
                 <li key={t.id}>
-                  <Link href={`/app/travel/trips/${t.id}`}
-                    className="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-card active:scale-[0.99]">
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-soft text-ink">
-                      <Transport width={19} height={19} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 font-bold">
-                        <span className="truncate">{t.fromCity}</span>
-                        <IconArrowRight width={14} height={14} className="shrink-0 text-muted" />
-                        <span className="truncate">{t.toCity}</span>
-                      </div>
-                      <div className="text-[13px] text-muted">
-                        {dateShort(t.travelDate)} · {timeWindow(t.departTime)} · {t.capacityKg}kg free
-                      </div>
-                    </div>
-                    <StatusBadge status={t.status} />
-                  </Link>
+                  <RouteCard
+                    href={`/app/travel/trips/${t.id}`}
+                    from={placeShort(t.fromCity)}
+                    to={placeShort(t.toCity)}
+                    kind={{ icon: <Transport width={14} height={14} />, label: "Trip", tone: "trip" }}
+                    amount={
+                      <span className="rounded-lg bg-brand px-2 py-1 text-[13px] font-bold text-ink">
+                        {t.spareKg}kg free
+                      </span>
+                    }
+                    meta={
+                      <span className="font-bold text-ink">
+                        {dateShort(t.travelDate)} · {timeWindow(t.departTime)}
+                        <span className="font-semibold text-muted"> · of {t.capacityKg}kg</span>
+                      </span>
+                    }
+                    badge={<StatusBadge status={t.status} />}
+                  />
                 </li>
               );
             })}

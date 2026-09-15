@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { listAdminActions } from "@/lib/queries/audit";
 import { requireAdmin } from "@/lib/auth";
+import { FilterBar, Empty } from "@/components/adminkit";
 import { timeAgo } from "@/core/format";
 
 const TARGET_HREF: Record<string, (id: string) => string> = {
@@ -25,17 +26,12 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: P
   return (
     <>
       <h1 className="text-2xl font-black tracking-tight">Audit log</h1>
-      <form className="mt-4 flex gap-2">
-        <input
-          name="q"
-          defaultValue={q}
-          placeholder="Filter by action, actor, or detail…"
-          className="flex-1 rounded-xl border border-line bg-white px-3.5 py-2.5 text-[15px] outline-none focus:border-ink"
-        />
-        <button className="rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white">Filter</button>
-      </form>
+      <FilterBar name="q" defaultValue={q} placeholder="Filter by action, actor, or detail…" label="Filter" />
 
-      <div className="mt-4 overflow-x-auto rounded-2xl bg-white shadow-card">
+      {rows.length === 0 ? (
+        <Empty>{q ? "No entries match that filter." : "No admin actions recorded yet."}</Empty>
+      ) : (
+      <div className="mt-5 overflow-x-auto rounded-2xl bg-canvas shadow-card">
         <table className="w-full text-left text-[13px]">
           <thead>
             <tr className="border-b border-line text-[11px] font-bold uppercase tracking-wide text-muted">
@@ -50,9 +46,11 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: P
             {rows.map((r) => {
               const href = r.action.targetType && r.action.targetId ? TARGET_HREF[r.action.targetType]?.(r.action.targetId) : undefined;
               return (
-                <tr key={r.action.id} className="border-b border-line/60 last:border-0">
-                  <td className="px-3 py-2.5 font-semibold">{r.action.action}</td>
-                  <td className="px-3 py-2.5 text-muted">{r.actor.fullName ?? "—"}</td>
+                <tr key={r.action.id} className="border-b border-line last:border-0 hover:bg-brand-soft">
+                  <td className="px-3 py-2.5 font-semibold">
+                    <span className="rounded-md bg-surface px-1.5 py-0.5 font-mono text-[12px]">{r.action.action}</span>
+                  </td>
+                  <td className="px-3 py-2.5 font-semibold text-ink">{r.actor.fullName ?? "—"}</td>
                   <td className="px-3 py-2.5">
                     {href ? <Link href={href} className="text-muted underline">{r.action.targetType}</Link> : <span className="text-muted">{r.action.targetType ?? "—"}</span>}
                   </td>
@@ -64,7 +62,7 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: P
           </tbody>
         </table>
       </div>
-      {rows.length === 0 && <p className="mt-4 text-center text-sm text-muted">No matching entries.</p>}
+      )}
     </>
   );
 }

@@ -27,7 +27,7 @@ export function SortTabs() {
               router.replace(`${path}?${p.toString()}`, { scroll: false });
             }}
             className={`shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
-              active ? "bg-ink text-white" : "border border-line bg-white text-muted"
+              active ? "bg-brand text-ink" : "border border-line bg-canvas text-muted"
             }`}
           >
             {o.label}

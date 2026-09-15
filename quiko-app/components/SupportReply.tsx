@@ -38,12 +38,12 @@ export function SupportReply({ threadId, status }: { threadId: string; status: "
           rows={2}
           placeholder="Reply to the customer…"
           maxLength={2000}
-          className="max-h-40 min-h-11 flex-1 resize-none rounded-xl bg-neutral-50 px-3.5 py-2 text-[15px] outline-none"
+          className="max-h-40 min-h-11 flex-1 resize-none rounded-xl bg-surface px-3.5 py-2 text-[15px] outline-none"
         />
         <button
           onClick={() => run(() => replySupportAction(threadId, text.trim()), true)}
           disabled={pending || !text.trim()}
-          className="rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white active:scale-95 disabled:opacity-40"
+          className="rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-ink transition-colors active:scale-95 enabled:hover:bg-brand-strong disabled:bg-surface disabled:text-muted"
         >
           Send
         </button>

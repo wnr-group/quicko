@@ -12,7 +12,7 @@ export default async function AdminUsersPage() {
       <h1 className="text-2xl font-black tracking-tight">Users</h1>
       <p className="text-sm text-muted">{users.length} registered.</p>
 
-      <div className="mt-4 overflow-x-auto rounded-2xl bg-white shadow-card">
+      <div className="mt-4 overflow-x-auto rounded-2xl bg-canvas shadow-card">
         <table className="w-full text-left text-[13px]">
           <thead>
             <tr className="border-b border-line text-[11px] font-bold uppercase tracking-wide text-muted">
@@ -35,7 +35,7 @@ export default async function AdminUsersPage() {
                 <td className="px-3 py-2.5 text-muted">{formatPhone(u.phone)}</td>
                 <td className="px-3 py-2.5 text-center">
                   <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                    u.kycLevel >= 3 ? "bg-success-soft text-success" : "bg-neutral-100 text-muted"
+                    u.kycLevel >= 3 ? "bg-success-soft text-success" : "bg-surface text-muted"
                   }`}>
                     {u.kycLevel >= 3 ? "Verified" : `L${u.kycLevel}`}
                   </span>

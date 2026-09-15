@@ -40,12 +40,12 @@ export function ProfileEditor({
           <button
             onClick={() => { setNameV(name); setEmailV(email ?? ""); setEditing(true); }}
             aria-label="Edit profile"
-            className="grid h-8 w-8 place-items-center rounded-full text-muted hover:bg-neutral-100"
+            className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-ink/10"
           >
             <IconEdit width={17} height={17} />
           </button>
         </div>
-        <p className="mt-0.5 text-[13px] text-muted">{email || "Add an email"}</p>
+        <p className="mt-0.5 text-[13px] font-medium text-ink-soft">{email || "Add an email"}</p>
       </div>
     );
   }
@@ -54,10 +54,10 @@ export function ProfileEditor({
     <div className="mx-auto flex max-w-[300px] flex-col gap-2">
       <input autoFocus value={nameV} onChange={(e) => setNameV(e.target.value)} maxLength={60}
         placeholder="Full name"
-        className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-center text-lg font-bold outline-none focus:border-ink" />
+        className="w-full rounded-xl border border-line-strong bg-canvas px-3 py-2.5 text-center text-lg font-bold outline-none focus:border-ink" />
       <input value={emailV} onChange={(e) => setEmailV(e.target.value)} inputMode="email" maxLength={120}
         placeholder="Email address"
-        className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-center text-[15px] outline-none focus:border-ink" />
+        className="w-full rounded-xl border border-line-strong bg-canvas px-3 py-2.5 text-center text-[15px] outline-none focus:border-ink" />
       {error && <p className="text-center text-sm text-error">{error}</p>}
       <div className="mt-1 flex gap-2">
         <div className="flex-1">

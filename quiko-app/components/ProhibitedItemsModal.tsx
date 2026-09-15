@@ -57,7 +57,7 @@ export function ProhibitedItemsModal({
         <div className="pt-safe flex items-center justify-between px-5 pb-3 shadow-sm">
           <h2 className="text-[17px] font-bold">Prohibited items</h2>
           <button onClick={onClose} aria-label="Close"
-            className="grid h-10 w-10 place-items-center rounded-full bg-neutral-100 active:scale-95">
+            className="grid h-10 w-10 place-items-center rounded-full bg-surface active:scale-95">
             <IconX />
           </button>
         </div>

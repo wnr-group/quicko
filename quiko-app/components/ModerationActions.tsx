@@ -32,7 +32,7 @@ export function ModerationActions({ reportId, canSuspend, admin }: { reportId: s
         </button>
       )}
       <button onClick={() => act("dismiss")} disabled={pending}
-        className="rounded-lg bg-neutral-100 px-3 py-1.5 text-[12px] font-bold text-ink active:scale-95 disabled:opacity-40">
+        className="rounded-lg bg-surface px-3 py-1.5 text-[12px] font-bold text-ink active:scale-95 disabled:opacity-40">
         Dismiss
       </button>
     </div>

@@ -67,7 +67,7 @@ export function LoginForm({ next }: { next?: string }) {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="+91 99999 00001"
-            className="w-full rounded-2xl border border-line bg-white px-4 py-4 text-lg font-medium tracking-wide shadow-card outline-none focus:border-ink"
+            className="w-full rounded-2xl border-2 border-line-strong bg-canvas px-4 py-4 text-lg font-medium tracking-wide outline-none transition-colors focus:border-ink"
           />
         ) : (
           <input
@@ -76,7 +76,7 @@ export function LoginForm({ next }: { next?: string }) {
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
             placeholder="––––––"
-            className="w-full rounded-2xl border border-line bg-white px-4 py-4 text-center text-3xl font-bold tracking-[0.4em] shadow-card outline-none focus:border-ink"
+            className="w-full rounded-2xl border-2 border-line-strong bg-canvas px-4 py-4 text-center text-3xl font-bold tracking-[0.4em] outline-none transition-colors focus:border-ink"
           />
         )}
 
@@ -106,7 +106,7 @@ export function LoginForm({ next }: { next?: string }) {
       </div>
 
       <div className="mt-auto pb-8">
-        <p className="rounded-xl bg-brand-soft px-3 py-2.5 text-center text-[13px] font-medium text-ink-soft">
+        <p className="rounded-xl bg-brand px-3 py-2.5 text-center text-[13px] font-semibold text-ink">
           Dev mode — any number works with code <b>123456</b>
         </p>
         <p className="mt-3 px-4 text-center text-[11px] leading-snug text-muted">
