@@ -25,6 +25,7 @@ export function TravelerMatchFlow({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [otp, setOtp] = useState("");
+  const [pickupOtp, setPickupOtp] = useState("");
   const [pickupPhoto, setPickupPhoto] = useState<string | null>(null);
   const [deliveryPhoto, setDeliveryPhoto] = useState<string | null>(null);
   const earn = splitPayment(price).travelerEarns;
@@ -82,9 +83,15 @@ export function TravelerMatchFlow({
           <>
             <Info tone="go">Payment secured 🔒 — pick it up from {fromCity}.</Info>
             <Receiver name={receiverName} phone={receiverPhone} />
+            <Info tone="wait">Collect the package, then enter the pickup OTP {senderName} gives you.</Info>
+            <input inputMode="numeric" value={pickupOtp}
+              onChange={(e) => setPickupOtp(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              placeholder="Pickup OTP"
+              className="mt-2 w-full rounded-xl border border-line px-4 py-3 text-center text-2xl font-bold tracking-[0.4em] outline-none focus:border-ink" />
             <PhotoCapture label="Add pickup photo (recommended)" value={pickupPhoto} onCapture={setPickupPhoto} />
-            <Btn disabled={pending} onClick={() => run(() => advanceMatchAction(matchId, tripId, packageId, "picked_up", pickupPhoto ?? undefined))}>
-              {pending ? "…" : "Mark picked up"}
+            <Btn disabled={pending || pickupOtp.length < 4}
+              onClick={() => run(() => advanceMatchAction(matchId, tripId, packageId, "picked_up", pickupPhoto ?? undefined, pickupOtp))}>
+              {pending ? "…" : "Confirm pickup"}
             </Btn>
           </>
         )}

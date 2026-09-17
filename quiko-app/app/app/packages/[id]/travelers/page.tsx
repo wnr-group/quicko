@@ -25,11 +25,10 @@ export default async function TravelersPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ sort?: string; transport?: string; minRating?: string }>;
+  searchParams: Promise<{ sort?: string; transport?: string }>;
 }) {
   const { id } = await params;
-  const { sort, transport = "", minRating: minRatingStr = "" } = await searchParams;
-  const minRating = Number(minRatingStr) || 0;
+  const { sort, transport = "" } = await searchParams;
   const user = await requireUser();
   const pkg = await getOwnedPackage(id, user.id);
   if (!pkg) notFound();
@@ -40,7 +39,6 @@ export default async function TravelersPage({
   ]);
   const trips = [...found]
     .filter(({ trip }) => (transport ? trip.transport === transport : true))
-    .filter(({ traveler }) => (minRating ? traveler.ratingAvg >= minRating : true))
     .sort(SORTS[sort ?? "trust"] ?? SORTS.trust);
 
   return (
@@ -72,7 +70,7 @@ export default async function TravelersPage({
             <Suspense fallback={null}>
               <SortTabs />
             </Suspense>
-            <TravelerFilters transport={transport} minRating={minRatingStr} />
+            <TravelerFilters transport={transport} />
 
             {trips.length === 0 ? (
               <div className="mt-4 rounded-3xl border border-dashed border-line bg-white/60 p-8 text-center">
@@ -84,7 +82,7 @@ export default async function TravelersPage({
                   {trips.length} traveler{trips.length > 1 ? "s" : ""} on your route
                 </p>
                 <div className="flex flex-col gap-3">
-                  {trips.map(({ trip, traveler }) => (
+                  {trips.map(({ trip, traveler, spareKg }) => (
                     <TravelerCard
                       key={trip.id}
                       packageId={pkg.id}
@@ -95,7 +93,7 @@ export default async function TravelersPage({
                       deliveries={traveler.deliveriesCount}
                       kycLevel={traveler.kycLevel}
                       transport={trip.transport}
-                      capacityKg={trip.capacityKg}
+                      capacityKg={Number(spareKg)}
                       pickupArea={trip.pickupArea ?? ""}
                       deliveryArea={trip.deliveryArea ?? ""}
                       alreadyRequested={requestedTripIds.has(trip.id)}

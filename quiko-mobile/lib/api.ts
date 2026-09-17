@@ -106,7 +106,7 @@ export type MatchSummary = {
   counterpartName: string; status: MatchStatus; price: number;
 };
 export type MatchDetail = MatchSummary & {
-  otp: string; weightKg: number; receiverName: string | null; receiverPhone: string | null;
+  pickupOtp: string; otp: string; weightKg: number; receiverName: string | null; receiverPhone: string | null;
 };
 
 export type Message = { id: string; mine: boolean; body: string; at: string };
@@ -154,8 +154,10 @@ export const api = {
     MOCK ? delay({ ok: true as const, id: "new" }) : req<{ ok: true; id: string }>("/packages", { method: "POST", body: JSON.stringify(input) }),
   payForMatch: (matchId: string) =>
     MOCK ? delay({ ok: true as const }) : req<{ ok: true }>(`/matches/${matchId}/pay`, { method: "POST" }),
-  advanceMatch: (matchId: string, to: "picked_up" | "in_transit") =>
-    MOCK ? delay({ ok: true as const }) : req<{ ok: true }>(`/matches/${matchId}/advance`, { method: "POST", body: JSON.stringify({ to }) }),
+  advanceMatch: (matchId: string, to: "picked_up" | "in_transit", otp?: string) =>
+    MOCK
+      ? delay(to !== "picked_up" || otp === MOCK_PICKUP_OTP ? { ok: true as const } : { ok: false as const, error: "Incorrect pickup OTP" })
+      : req<{ ok: true }>(`/matches/${matchId}/advance`, { method: "POST", body: JSON.stringify({ to, otp }) }),
   confirmDelivery: (matchId: string, otp: string) =>
     MOCK ? delay(otp === MOCK_OTP ? { ok: true as const } : { ok: false as const, error: "Incorrect OTP" }) : req<{ ok: true }>(`/matches/${matchId}/deliver`, { method: "POST", body: JSON.stringify({ otp }) }),
   rate: (matchId: string, stars: number, comment: string) =>
@@ -169,6 +171,7 @@ export const api = {
 
 // ---- Mock data ------------------------------------------------------------
 export const MOCK_OTP = "4321";
+export const MOCK_PICKUP_OTP = "1234";
 const MOCK_ME: Me = { id: "mock", fullName: "Sethu Sender", phone: "919000000001", kycLevel: 1 };
 const MOCK_TRIPS: ExploreTrip[] = [
   { id: "t1", travelerName: "Arjun Nair", transport: "flight", travelDate: "2026-08-10", arriveDate: "2026-08-10", departTime: "09:30", arriveTime: "11:00" },
@@ -184,7 +187,7 @@ const MOCK_MATCHES: MatchSummary[] = [
 ];
 const MOCK_MATCH_DETAIL = (id: string): MatchDetail => {
   const base = MOCK_MATCHES.find((m) => m.id === id) ?? MOCK_MATCHES[0];
-  return { ...base, otp: MOCK_OTP, weightKg: 2, receiverName: null, receiverPhone: null };
+  return { ...base, pickupOtp: MOCK_PICKUP_OTP, otp: MOCK_OTP, weightKg: 2, receiverName: null, receiverPhone: null };
 };
 const MOCK_THREAD: Thread = {
   counterpartName: "Arjun Nair", fromCity: "T Nagar, Chennai", toCity: "Andheri, Mumbai",

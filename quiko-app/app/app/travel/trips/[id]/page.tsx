@@ -9,7 +9,7 @@ import { CancelTripButton } from "@/components/CancelTripButton";
 import { TRANSPORT_ICONS, IconArrowRight, IconStar, IconPackage, IconChevronRight } from "@/components/icons";
 import { requireUser } from "@/lib/auth";
 import { getOwnedTrip } from "@/lib/queries/trips";
-import { getRequestsForTrip } from "@/lib/queries/requests";
+import { getRequestsForTrip, spareCapacity } from "@/lib/queries/requests";
 import { getMatchesForTrip, getCancelledMatchesForTrip } from "@/lib/queries/matches";
 import { getOpenDisputeRaisers } from "@/lib/queries/disputes";
 import { inr, dateShort, timeWindow, initials, timeAgo } from "@/core/format";
@@ -30,6 +30,7 @@ export default async function TripDetailPage({
     getCancelledMatchesForTrip(id),
   ]);
   const disputeRaisers = await getOpenDisputeRaisers(carrying.map((c) => c.match.id));
+  const spareKg = await spareCapacity(trip.id, trip.capacityKg);
   const pending = requests.filter((r) => r.request.status === "pending");
   // Requests the sender initiated → the traveler accepts/declines these.
   const incoming = pending.filter((r) => r.request.initiatorRole === "sender");
@@ -64,7 +65,7 @@ export default async function TripDetailPage({
           <dl className="mt-4 grid grid-cols-3 gap-2 border-t border-line pt-3 text-center">
             <Detail k="Departs" v={timeWindow(trip.departTime)} sub={dateShort(trip.travelDate)} />
             <Detail k="Arrives" v={timeWindow(trip.arriveTime)} sub={dateShort(trip.arriveDate ?? trip.travelDate)} />
-            <Detail k="Capacity" v={`${trip.capacityKg} kg`} />
+            <Detail k="Capacity" v={`${spareKg} kg free`} sub={`of ${trip.capacityKg} kg`} />
           </dl>
         </div>
 

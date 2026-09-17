@@ -138,7 +138,7 @@ export async function payForMatch(matchId: string, senderId: string): Promise<Pa
         profileId: m.travelerId,
         type: "paid",
         title: "Payment secured 🔒",
-        body: "The sender paid into escrow — go pick up the package.",
+        body: "The sender paid into escrow — go pick up the package and get their pickup OTP.",
         href: `/app/travel/trips/${m.tripId}`,
       });
       return { ok: true };
@@ -232,6 +232,7 @@ export async function advanceMatchAsTraveler(
   travelerId: string,
   to: "picked_up" | "in_transit",
   photo?: string,
+  otp?: string,
 ): Promise<Result> {
   if (photo) {
     const err = validatePhoto(photo);
@@ -244,6 +245,12 @@ export async function advanceMatchAsTraveler(
       return { ok: false, error: "Waiting for the sender to pay" };
     if (to === "in_transit" && m.status !== "picked_up")
       return { ok: false, error: "Mark pickup first" };
+    // Hand-over proof: the sender reads out the pickup OTP only once the package
+    // is physically with the traveller, so a pickup can't be self-declared.
+    // Matches created before pickup OTPs existed carry none — those stay on the
+    // old photo-only flow rather than becoming impossible to progress.
+    if (to === "picked_up" && m.pickupOtp && m.pickupOtp !== (otp ?? "").trim())
+      return { ok: false, error: "Incorrect pickup OTP" };
     await tx
       .update(matches)
       .set({ status: to, updatedAt: new Date(), ...(to === "picked_up" && photo ? { pickupPhotoUrl: photo } : {}) })
@@ -492,9 +499,16 @@ export async function getUserMatches(profileId: string) {
     .innerJoin(profiles, eq(matches.senderId, profiles.id)) // counterpart = sender
     .where(eq(matches.travelerId, profileId));
 
+  // The two queries overlap when one profile is BOTH sides of a match, which
+  // would list the row twice (React then sees duplicate keys). Creating such a
+  // match is blocked now, but legacy rows exist — show them once, sender-side.
+  const seen = new Set(asSender.map((r) => r.match.id));
+
   return [
     ...asSender.map((r) => ({ ...r, role: "sender" as const, href: `/app/packages/${r.package.id}` })),
-    ...asTraveler.map((r) => ({ ...r, role: "traveler" as const, href: `/app/travel/trips/${r.match.tripId}` })),
+    ...asTraveler
+      .filter((r) => !seen.has(r.match.id))
+      .map((r) => ({ ...r, role: "traveler" as const, href: `/app/travel/trips/${r.match.tripId}` })),
   ].sort((a, b) => (b.match.updatedAt?.getTime() ?? 0) - (a.match.updatedAt?.getTime() ?? 0));
 }
 

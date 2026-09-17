@@ -9,13 +9,7 @@ const TRANSPORTS = [
   { value: "bus", label: "Bus" },
   { value: "car", label: "Car" },
 ];
-const RATINGS = [
-  { value: "", label: "Any rating" },
-  { value: "3", label: "3★+" },
-  { value: "4", label: "4★+" },
-];
-
-export function TravelerFilters({ transport, minRating }: { transport: string; minRating: string }) {
+export function TravelerFilters({ transport }: { transport: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -30,7 +24,6 @@ export function TravelerFilters({ transport, minRating }: { transport: string; m
   return (
     <div className="mb-3 flex flex-col gap-2">
       <ChipRow options={TRANSPORTS} value={transport} onPick={(v) => set("transport", v)} />
-      <ChipRow options={RATINGS} value={minRating} onPick={(v) => set("minRating", v)} />
     </div>
   );
 }

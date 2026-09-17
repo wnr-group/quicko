@@ -34,11 +34,9 @@ export default async function ExplorePage({
   // Filters + sort (client-driven via URL params; applied here in-memory).
   const sort = typeof sp.sort === "string" ? sp.sort : "arrival";
   const transport = typeof sp.transport === "string" ? sp.transport : "";
-  const minRating = typeof sp.minRating === "string" ? Number(sp.minRating) : 0;
 
   const trips = all
     .filter(({ trip }) => (transport ? trip.transport === transport : true))
-    .filter(({ traveler }) => (minRating ? traveler.ratingAvg >= minRating : true))
     .sort((a, b) => {
       if (sort === "rating") return b.traveler.ratingAvg - a.traveler.ratingAvg;
       if (sort === "trust") return b.traveler.trustScore - a.traveler.trustScore;
@@ -71,7 +69,7 @@ export default async function ExplorePage({
 
         {all.length > 0 && (
           <Suspense fallback={null}>
-            <ExploreFilters sort={sort} transport={transport} minRating={String(minRating || "")} />
+            <ExploreFilters sort={sort} transport={transport} />
           </Suspense>
         )}
 

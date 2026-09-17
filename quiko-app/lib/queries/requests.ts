@@ -1,16 +1,186 @@
 import "server-only";
 import { randomInt } from "node:crypto";
-import { and, desc, eq, inArray, ne } from "drizzle-orm";
+import { and, desc, eq, inArray, lt, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { matchRequests, matches, packages, trips, profiles } from "@/db/schema";
 import { notify } from "@/lib/queries/notifications";
 import { logAdminAction } from "@/lib/queries/audit";
 import { detourKm, detourTier } from "@/core/geo";
 import { detourFee } from "@/core/pricing";
+import { VERIFIED_LEVEL } from "@/lib/queries/kyc";
 import type { Role } from "@/core/types";
+
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 function genOtp(): string {
   return String(randomInt(1000, 10000)); // 4-digit
+}
+
+/**
+ * A trip may only carry a package that fits its spare capacity.
+ *
+ * This is the binding rule, enforced at every write that pairs a package with a
+ * trip. The capacity conditions in the discovery queries (`findMatchingTrips`,
+ * `explorePackages`) only shape what gets *listed* — the explore-first sender
+ * flow deliberately lists trips before the weight is known, so nothing upstream
+ * guarantees the pair actually fits.
+ *
+ * Returns an error message, or null when the package fits.
+ */
+export function capacityError(weightKg: number, capacityKg: number): string | null {
+  if (weightKg <= capacityKg) return null;
+  return `This package is ${weightKg} kg — more than the trip's ${capacityKg} kg spare capacity.`;
+}
+
+/** Nobody can be both sides of a delivery (self-paid escrow, self-rating). */
+export function selfMatchError(senderId: string, travelerId: string): string | null {
+  return senderId === travelerId
+    ? "You can't carry your own package."
+    : null;
+}
+
+/**
+ * A suspended account can't sign in, so it can never accept, hand over, deliver
+ * or confirm. Pairing with one strands the delivery (and any escrowed money),
+ * so both sides are checked before a request or a match is created.
+ */
+export async function suspendedError(
+  tx: Tx,
+  profileId: string,
+  who: "sender" | "traveller",
+): Promise<string | null> {
+  const [p] = await tx
+    .select({ status: profiles.status })
+    .from(profiles)
+    .where(eq(profiles.id, profileId))
+    .limit(1);
+  if (!p) return `This ${who}'s account no longer exists.`;
+  return p.status === "suspended" ? `This ${who}'s account is suspended.` : null;
+}
+
+/**
+ * Only an identity-verified traveller may be paired with a package — someone
+ * else's property and the escrowed payment both pass through their hands, and a
+ * phone number alone doesn't say who took the parcel.
+ *
+ * Enforced on BOTH request directions (the sender asking a traveller, and the
+ * traveller offering to carry) and again at accept, where the match and the
+ * delivery OTP are actually minted.
+ *
+ * The level on `profiles` is the source of truth, never the kyc_verifications
+ * row: an admin force-verify (`lib/queries/adminOps.ts`) raises the level
+ * without writing a submission.
+ */
+function verificationError(kycLevel: number | undefined, self: boolean): string | null {
+  if (kycLevel === undefined) return "This traveller's account no longer exists.";
+  if (kycLevel >= VERIFIED_LEVEL) return null;
+  // `self` covers both offering to carry and accepting a request — the same
+  // person is the traveller either way, so the wording has to fit both.
+  return self
+    ? "Verify your identity before you can carry a package."
+    : "This traveller hasn't verified their identity yet.";
+}
+
+/** Verification check inside a transaction (accept paths). */
+export async function unverifiedTravellerError(
+  tx: Tx,
+  travelerId: string,
+  self = false,
+): Promise<string | null> {
+  const [p] = await tx
+    .select({ kycLevel: profiles.kycLevel })
+    .from(profiles)
+    .where(eq(profiles.id, travelerId))
+    .limit(1);
+  return verificationError(p?.kycLevel, self);
+}
+
+/** Same rule for server actions and API routes, which have no transaction. */
+export async function travellerVerificationError(
+  travelerId: string,
+  self = false,
+): Promise<string | null> {
+  const [p] = await db
+    .select({ kycLevel: profiles.kycLevel })
+    .from(profiles)
+    .where(eq(profiles.id, travelerId))
+    .limit(1);
+  return verificationError(p?.kycLevel, self);
+}
+
+/**
+ * Weight already committed to a trip by its live matches.
+ *
+ * A trip carries as many packages as its capacity allows, so "can this fit?" is
+ * never `weightKg <= trip.capacityKg` — it's against what's LEFT. Cancelled
+ * matches release their space again, matching how `getMatchForPackage` treats
+ * `cancelled` as "not a live pairing".
+ */
+export async function bookedKg(tripId: string): Promise<number> {
+  const [row] = await db
+    .select({ kg: sql<string>`coalesce(sum(${packages.weightKg}), 0)` })
+    .from(matches)
+    .innerJoin(packages, eq(packages.id, matches.packageId))
+    .where(and(eq(matches.tripId, tripId), ne(matches.status, "cancelled")));
+  return Number(row?.kg ?? 0);
+}
+
+/** Same, inside a transaction — the accept paths must not race each other. */
+async function bookedKgIn(tx: Tx, tripId: string): Promise<number> {
+  const [row] = await tx
+    .select({ kg: sql<string>`coalesce(sum(${packages.weightKg}), 0)` })
+    .from(matches)
+    .innerJoin(packages, eq(packages.id, matches.packageId))
+    .where(and(eq(matches.tripId, tripId), ne(matches.status, "cancelled")));
+  return Number(row?.kg ?? 0);
+}
+
+/** Capacity a trip still has free, for callers outside a transaction. */
+export async function spareCapacity(tripId: string, capacityKg: number): Promise<number> {
+  return capacityKg - (await bookedKg(tripId));
+}
+
+/**
+ * A trip is only closed to new packages once its capacity is used up — carrying
+ * one 2 kg parcel must not take an 10 kg trip off the market. Called after every
+ * match write so the status follows the load.
+ */
+async function syncTripFullness(tx: Tx, tripId: string, capacityKg: number): Promise<void> {
+  const spare = capacityKg - (await bookedKgIn(tx, tripId));
+  await tx
+    .update(trips)
+    .set({ status: spare > 0 ? "active" : "matched", updatedAt: new Date() })
+    .where(eq(trips.id, tripId));
+}
+
+/**
+ * Spare capacity of a trip with a still-pending request on this package that
+ * could no longer carry `weightKg` (i.e. the sender is editing the weight up
+ * from under a traveller who already has a request in their queue).
+ */
+export async function pendingRequestOverCapacity(
+  packageId: string,
+  weightKg: number,
+): Promise<number | null> {
+  // Spare, not total — the traveller may already be carrying other packages.
+  const spare = sql<string>`${trips.capacityKg} - coalesce((
+    select sum(${packages.weightKg}) from ${matches}
+    join ${packages} on ${packages.id} = ${matches.packageId}
+    where ${matches.tripId} = ${trips.id} and ${matches.status} <> 'cancelled'
+  ), 0)`;
+  const [row] = await db
+    .select({ spareKg: spare })
+    .from(matchRequests)
+    .innerJoin(trips, eq(matchRequests.tripId, trips.id))
+    .where(
+      and(
+        eq(matchRequests.packageId, packageId),
+        eq(matchRequests.status, "pending"),
+        lt(spare, weightKg),
+      ),
+    )
+    .limit(1);
+  return row ? Number(row.spareKg) : null;
 }
 
 type PkgCoords = { fromLat: number; fromLng: number; toLat: number; toLng: number };
@@ -175,6 +345,27 @@ export async function acceptRequest(requestId: string, travelerId: string) {
       : [undefined];
 
     if (!trip || trip.travelerId !== travelerId) throw new Error("Not allowed");
+    // "matched" now means FULL, not closed, so it stays acceptable until the
+    // capacity check below says otherwise — but a finished or cancelled trip
+    // can never take another package.
+    if (trip.status === "completed" || trip.status === "cancelled") {
+      throw new Error("This trip is no longer running.");
+    }
+
+    const isSelf = selfMatchError(pkg.senderId, travelerId);
+    if (isSelf) throw new Error(isSelf);
+
+    // Against what the trip has LEFT, read inside the transaction — two requests
+    // accepted back to back must not each measure themselves against the empty trip.
+    const spare = trip.capacityKg - (await bookedKgIn(tx, trip.id));
+    const tooHeavy = capacityError(pkg.weightKg, spare);
+    if (tooHeavy) throw new Error(tooHeavy);
+
+    const senderGone = await suspendedError(tx, pkg.senderId, "sender");
+    if (senderGone) throw new Error(senderGone);
+
+    const unverified = await unverifiedTravellerError(tx, travelerId, true);
+    if (unverified) throw new Error(unverified);
 
     const base = req.counterAmount ?? req.amount;
     const detour = matchDetour(pkg, trip);
@@ -190,6 +381,7 @@ export async function acceptRequest(requestId: string, travelerId: string) {
         detourFee: detour.fee,
         detourSelfCollect: detour.selfCollect,
         status: "confirmed",
+        pickupOtp: genOtp(),
         deliveryOtp: genOtp(),
       })
       .returning();
@@ -215,12 +407,7 @@ export async function acceptRequest(requestId: string, travelerId: string) {
       .set({ status: "matched", updatedAt: new Date() })
       .where(eq(packages.id, pkg.id));
 
-    if (req.tripId) {
-      await tx
-        .update(trips)
-        .set({ status: "matched", updatedAt: new Date() })
-        .where(eq(trips.id, req.tripId));
-    }
+    if (req.tripId) await syncTripFullness(tx, req.tripId, trip.capacityKg);
 
     return match;
   });
@@ -274,6 +461,19 @@ export async function acceptOfferAsSender(requestId: string, senderId: string) {
     if (!trip) throw new Error("Trip no longer available");
     if (trip.status !== "active") throw new Error("Trip no longer available");
 
+    const isSelf = selfMatchError(senderId, trip.travelerId);
+    if (isSelf) throw new Error(isSelf);
+
+    const spare = trip.capacityKg - (await bookedKgIn(tx, trip.id));
+    const tooHeavy = capacityError(pkg.weightKg, spare);
+    if (tooHeavy) throw new Error(tooHeavy);
+
+    const travellerGone = await suspendedError(tx, trip.travelerId, "traveller");
+    if (travellerGone) throw new Error(travellerGone);
+
+    const unverified = await unverifiedTravellerError(tx, trip.travelerId);
+    if (unverified) throw new Error(unverified);
+
     const base = req.counterAmount ?? req.amount;
     const detour = matchDetour(pkg, trip);
     const [match] = await tx
@@ -288,6 +488,7 @@ export async function acceptOfferAsSender(requestId: string, senderId: string) {
         detourFee: detour.fee,
         detourSelfCollect: detour.selfCollect,
         status: "confirmed",
+        pickupOtp: genOtp(),
         deliveryOtp: genOtp(),
       })
       .returning();
@@ -308,10 +509,7 @@ export async function acceptOfferAsSender(requestId: string, senderId: string) {
       .set({ status: "matched", updatedAt: new Date() })
       .where(eq(packages.id, pkg.id));
 
-    await tx
-      .update(trips)
-      .set({ status: "matched", updatedAt: new Date() })
-      .where(eq(trips.id, trip.id));
+    await syncTripFullness(tx, trip.id, trip.capacityKg);
 
     return match;
   });
@@ -331,6 +529,15 @@ export async function adminCreateMatch(
     if (!trip) return { ok: false, error: "Trip not found" };
     if (trip.status !== "active") return { ok: false, error: "Trip is not active" };
     if (trip.travelerId === pkg.senderId) return { ok: false, error: "Sender and traveller are the same person" };
+    const spare = trip.capacityKg - (await bookedKgIn(tx, trip.id));
+    const tooHeavy = capacityError(pkg.weightKg, spare);
+    if (tooHeavy) return { ok: false, error: tooHeavy };
+    for (const [id, who] of [[pkg.senderId, "sender"], [trip.travelerId, "traveller"]] as const) {
+      const gone = await suspendedError(tx, id, who);
+      if (gone) return { ok: false, error: gone };
+    }
+    const unverified = await unverifiedTravellerError(tx, trip.travelerId);
+    if (unverified) return { ok: false, error: unverified };
 
     const base = pkg.offerPrice ?? pkg.maxPrice ?? 0;
     const detour = matchDetour(pkg, trip);
@@ -346,12 +553,13 @@ export async function adminCreateMatch(
         detourFee: detour.fee,
         detourSelfCollect: detour.selfCollect,
         status: "confirmed",
+        pickupOtp: genOtp(),
         deliveryOtp: genOtp(),
       })
       .returning();
 
     await tx.update(packages).set({ status: "matched", updatedAt: new Date() }).where(eq(packages.id, pkg.id));
-    await tx.update(trips).set({ status: "matched", updatedAt: new Date() }).where(eq(trips.id, trip.id));
+    await syncTripFullness(tx, trip.id, trip.capacityKg);
     await notify(tx, {
       profileId: pkg.senderId,
       type: "package_match",

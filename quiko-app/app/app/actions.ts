@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/auth";
 import {
   createPackageSchema,
   createTripSchema,
+  profileSchema,
   type CreatePackageInput,
   type CreateTripInput,
 } from "@/lib/validation";
@@ -25,6 +26,11 @@ import {
   acceptOfferAsSender,
   declineOfferAsSender,
   adminCreateMatch,
+  capacityError,
+  selfMatchError,
+  pendingRequestOverCapacity,
+  spareCapacity,
+  travellerVerificationError,
 } from "@/lib/queries/requests";
 import {
   payForMatch,
@@ -105,9 +111,10 @@ export async function advanceMatchAction(
   packageId: string,
   to: "picked_up" | "in_transit",
   photo?: string,
+  otp?: string,
 ): Promise<ActionResult> {
   const user = await requireUser();
-  const res = await advanceMatchAsTraveler(matchId, user.id, to, photo);
+  const res = await advanceMatchAsTraveler(matchId, user.id, to, photo, otp);
   if (res.ok) revalidateTraveler(tripId, packageId);
   return res;
 }
@@ -160,10 +167,22 @@ export async function createFromExploreAction(
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
+  // Explore lists trips before the weight is known, so the chosen traveller may
+  // not be able to carry it. Check before creating anything — otherwise a
+  // rejected request leaves an orphan package behind.
+  const chosen = tripId ? await getTrip(tripId) : null;
+  if (tripId && chosen) {
+    const isSelf = selfMatchError(user.id, chosen.travelerId);
+    if (isSelf) return { ok: false as const, error: isSelf };
+    const tooHeavy = capacityError(parsed.data.weightKg, await spareCapacity(chosen.id, chosen.capacityKg));
+    if (tooHeavy) return { ok: false as const, error: tooHeavy };
+    const unverified = await travellerVerificationError(chosen.travelerId);
+    if (unverified) return { ok: false as const, error: unverified };
+  }
+
   const pkg = await createPackage(user.id, parsed.data);
   if (tripId) {
-    const trip = await getTrip(tripId);
-    if (trip && trip.status === "active") {
+    if (chosen && chosen.status === "active") {
       await sendRequest({
         packageId: pkg.id,
         tripId,
@@ -189,6 +208,17 @@ export async function updatePackageAction(
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
+  // A package with a pending request is still "active" and so still editable.
+  // Don't let the weight be raised past the capacity of a traveller who already
+  // has a request for it sitting in their queue.
+  const overCapacity = await pendingRequestOverCapacity(packageId, parsed.data.weightKg);
+  if (overCapacity !== null) {
+    return {
+      ok: false as const,
+      error: `A traveller you've already requested has only ${overCapacity} kg spare. Cancel that request before raising the weight to ${parsed.data.weightKg} kg.`,
+    };
+  }
+
   const updated = await updatePackage(packageId, user.id, parsed.data);
   if (!updated) {
     return { ok: false as const, error: "This package can no longer be edited" };
@@ -227,11 +257,11 @@ export async function updateProfileAction(
   email: string,
 ): Promise<ActionResult> {
   const user = await requireUser();
-  const name = fullName.trim();
-  const mail = email.trim().toLowerCase();
-  if (name.length < 2) return { ok: false, error: "Enter a valid name" };
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) return { ok: false, error: "Enter a valid email" };
-  await updateProfile(user.id, { fullName: name, email: mail });
+  const parsed = profileSchema.safeParse({ fullName, email });
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  await updateProfile(user.id, { fullName: parsed.data.fullName, email: parsed.data.email });
   revalidatePath("/app/profile");
   revalidatePath("/app");
   return { ok: true };
@@ -251,6 +281,12 @@ export async function sendRequestAction(params: {
   if (!trip || trip.status !== "active") {
     return { ok: false, error: "This trip is no longer available" };
   }
+  const isSelf = selfMatchError(user.id, trip.travelerId);
+  if (isSelf) return { ok: false, error: isSelf };
+  const tooHeavy = capacityError(pkg.weightKg, await spareCapacity(trip.id, trip.capacityKg));
+  if (tooHeavy) return { ok: false, error: tooHeavy };
+  const unverified = await travellerVerificationError(trip.travelerId);
+  if (unverified) return { ok: false, error: unverified };
 
   await sendRequest({
     packageId: params.packageId,
@@ -324,6 +360,13 @@ export async function offerToCarryAction(
   if (trip.status !== "active") return { ok: false, error: "This trip is no longer active" };
   const pkg = await getPackage(packageId);
   if (!pkg || pkg.status !== "active") return { ok: false, error: "This package is no longer available" };
+  const isSelf = selfMatchError(pkg.senderId, user.id);
+  if (isSelf) return { ok: false, error: isSelf };
+  const tooHeavy = capacityError(pkg.weightKg, await spareCapacity(trip.id, trip.capacityKg));
+  if (tooHeavy) return { ok: false, error: tooHeavy };
+  // The offering traveller is the one who'd carry it — verify them, not the sender.
+  const unverified = await travellerVerificationError(user.id, true);
+  if (unverified) return { ok: false, error: unverified };
   await sendRequest({
     packageId,
     tripId,

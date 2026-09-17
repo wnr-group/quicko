@@ -2,6 +2,7 @@ import "server-only";
 import { db } from "@/db";
 import { explorePackages } from "@/lib/queries/packages";
 import { findMatchingTrips } from "@/lib/queries/trips";
+import { spareCapacity } from "@/lib/queries/requests";
 import { notify } from "@/lib/queries/notifications";
 
 /**
@@ -28,12 +29,13 @@ export async function notifyMatchesForNewTrip(trip: {
   }
   const matches = await explorePackages({
     tripId: trip.id,
+    travelerId: trip.travelerId,
     fromLat: trip.fromLat,
     fromLng: trip.fromLng,
     toLat: trip.toLat,
     toLng: trip.toLng,
     tripDate: trip.travelDate,
-    capacityKg: trip.capacityKg,
+    capacityKg: await spareCapacity(trip.id, trip.capacityKg),
   });
 
   let sent = 0;
@@ -66,6 +68,7 @@ export async function notifyMatchesForNewPackage(pkg: {
   weightKg: number;
 }): Promise<number> {
   const trips = await findMatchingTrips({
+    senderId: pkg.senderId,
     fromLat: pkg.fromLat,
     fromLng: pkg.fromLng,
     toLat: pkg.toLat,
