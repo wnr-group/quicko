@@ -31,14 +31,14 @@ export function AdminMatchActions({ matchId, status, admin }: { matchId: string;
 
   if (done) {
     return (
-      <div className="mt-3 rounded-2xl border border-line bg-white p-4 text-[13px] text-muted shadow-card">
+      <div className="mt-3 rounded-2xl bg-canvas p-4 text-[13px] text-muted shadow-card">
         This match is {status}. No further money actions.
       </div>
     );
   }
 
   return (
-    <div className="mt-3 rounded-2xl border border-line bg-white p-4 shadow-card">
+    <div className="mt-3 rounded-2xl bg-canvas p-4 shadow-card">
       <h2 className="mb-2 text-[12px] font-bold uppercase tracking-wide text-muted">Ops actions</h2>
       {error && <p className="mb-2 text-[13px] font-medium text-error">{error}</p>}
 
@@ -56,7 +56,7 @@ export function AdminMatchActions({ matchId, status, admin }: { matchId: string;
               {pending ? "Working…" : "Confirm"}
             </button>
             <button onClick={() => setConfirm(null)} disabled={pending}
-              className="rounded-xl bg-neutral-100 px-3.5 py-2 text-[13px] font-semibold text-ink">
+              className="rounded-xl bg-surface px-3.5 py-2 text-[13px] font-semibold text-ink transition-colors hover:bg-brand-soft">
               Cancel
             </button>
           </div>
@@ -78,7 +78,7 @@ export function AdminMatchActions({ matchId, status, admin }: { matchId: string;
             <button
               onClick={() => run(() => dismissDisputeAction(matchId))}
               disabled={pending}
-              className="rounded-xl bg-neutral-100 px-3.5 py-2 text-[13px] font-semibold text-ink hover:bg-neutral-200 disabled:opacity-40"
+              className="rounded-xl bg-surface px-3.5 py-2 text-[13px] font-semibold text-ink transition-colors hover:bg-brand-soft disabled:opacity-40"
             >
               Dismiss (no action)
             </button>

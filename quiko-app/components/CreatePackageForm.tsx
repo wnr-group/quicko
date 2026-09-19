@@ -183,19 +183,19 @@ export function CreatePackageForm({
             onChange={(v) => setTimePreference(v as TimePreference)} />
           {timePreference === "flexible" && (
             <div className="mt-3 flex items-end gap-2">
-              <label className="flex-1">
+              <label className="min-w-0 flex-1">
                 <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-muted">Earliest</span>
                 <input type="date" value={from0} min={today} onChange={(e) => setFlexFrom(e.target.value)}
-                  className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-[14px] outline-none focus:border-ink" />
+                  className="w-full min-w-0 rounded-xl border border-line-strong bg-canvas px-3 py-2.5 text-[14px] outline-none focus:border-ink" />
               </label>
-              <label className="flex-1">
+              <label className="min-w-0 flex-1">
                 <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-muted">Latest</span>
                 <input type="date" value={to0} min={from0} onChange={(e) => setFlexTo(e.target.value)}
-                  className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-[14px] outline-none focus:border-ink" />
+                  className="w-full min-w-0 rounded-xl border border-line-strong bg-canvas px-3 py-2.5 text-[14px] outline-none focus:border-ink" />
               </label>
             </div>
           )}
-          <p className="mt-2.5 text-[12px] leading-snug text-muted">
+          <p className="mt-2.5 text-[13px] leading-snug text-muted">
             The sooner you need it, the higher the price — same-day costs the most,
             flexible is the cheapest.
           </p>
@@ -237,10 +237,10 @@ export function CreatePackageForm({
 }
 
 function Card({ children }: { children: React.ReactNode }) {
-  return <div className="mt-3 rounded-3xl bg-white p-4 shadow-card">{children}</div>;
+  return <div className="mt-3 rounded-3xl bg-canvas p-4 shadow-card">{children}</div>;
 }
 function Label({ children }: { children: React.ReactNode }) {
-  return <span className="mb-2.5 block text-[13px] font-bold uppercase tracking-wide text-muted">{children}</span>;
+  return <span className="mb-2.5 block text-[13px] font-bold uppercase tracking-wide text-ink">{children}</span>;
 }
 
 function StepBtn({ onClick, disabled, label, children }: {
@@ -248,7 +248,7 @@ function StepBtn({ onClick, disabled, label, children }: {
 }) {
   return (
     <button type="button" onClick={onClick} disabled={disabled} aria-label={label}
-      className="grid h-12 w-12 place-items-center rounded-full bg-neutral-100 text-ink transition-colors active:scale-95 disabled:opacity-30 enabled:hover:bg-neutral-200">
+      className="grid h-12 w-12 place-items-center rounded-full bg-ink text-brand transition-colors active:scale-95 disabled:opacity-30 enabled:hover:bg-ink-soft">
       {children}
     </button>
   );
@@ -259,15 +259,15 @@ function FieldButton({ badge, ink, icon, label, value, placeholder, onClick }: {
   value?: string; placeholder: string; onClick: () => void;
 }) {
   return (
-    <button type="button" onClick={onClick} className="flex w-full items-center gap-2.5 px-3 py-3.5 text-left active:bg-neutral-50">
-      <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-bold ${ink ? "bg-ink text-white" : "bg-brand text-ink"}`}>
+    <button type="button" onClick={onClick} className="flex w-full items-center gap-2.5 px-3 py-3.5 text-left active:bg-brand-soft">
+      <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-bold ${ink ? "bg-ink text-brand" : "bg-brand text-ink"}`}>
         {badge}
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-muted">
           {icon} {label}
         </span>
-        <span className={`block truncate text-[14px] font-semibold ${value ? "text-ink" : "text-muted"}`}>
+        <span className={`block break-words text-[14px] font-semibold ${value ? "text-ink" : "text-muted"}`}>
           {value ?? placeholder}
         </span>
       </span>
@@ -280,12 +280,12 @@ function Segmented<T extends string>({ options, value, onChange }: {
   options: { value: T; label: string }[]; value: T; onChange: (v: T) => void;
 }) {
   return (
-    <div className="flex gap-1 rounded-2xl bg-neutral-100 p-1">
+    <div className="flex gap-1 rounded-2xl bg-surface p-1 ring-1 ring-line">
       {options.map((o) => {
         const on = value === o.value;
         return (
           <button key={o.value} type="button" onClick={() => onChange(o.value)}
-            className={`flex-1 rounded-xl py-2.5 text-[13px] font-semibold transition-all ${on ? "bg-white text-ink shadow-sm" : "text-muted"}`}>
+            className={`flex-1 rounded-xl py-2.5 text-[13px] font-semibold transition-all ${on ? "bg-ink text-brand shadow-sm" : "text-muted hover:text-ink"}`}>
             {o.label}
           </button>
         );

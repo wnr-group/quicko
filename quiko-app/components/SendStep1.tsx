@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
-import { Card, Label, FieldButton, Segmented, TIME_OPTIONS } from "@/components/formkit";
+import { Card, Label, FieldButton, Segmented, StepHeader, TIME_OPTIONS } from "@/components/formkit";
 import { IconMapPin, IconFlag } from "@/components/icons";
 import { reverseGeocode } from "@/components/geocode";
 import { toSendQuery } from "@/lib/sendParams";
@@ -60,10 +60,11 @@ export function SendStep1({
 
   return (
     <div className="flex flex-1 flex-col">
+      <StepHeader step={1} total={3} label="Route & timing" />
       <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-5">
         <Card>
           <Label>Where are you sending?</Label>
-          <div className="overflow-hidden rounded-2xl border border-line bg-white">
+          <div className="overflow-hidden rounded-2xl border border-line-strong bg-canvas">
             <FieldButton badge="A" ink icon={<IconMapPin width={14} height={14} />}
               label="Pickup" value={from?.label} placeholder="Set pickup location"
               onClick={() => setSheet("from")} />
@@ -80,26 +81,26 @@ export function SendStep1({
             onChange={(v) => setTimePreference(v)} />
           {timePreference === "flexible" && (
             <div className="mt-3 flex items-end gap-2">
-              <label className="flex-1">
+              <label className="min-w-0 flex-1">
                 <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-muted">Earliest</span>
                 <input type="date" value={from0} min={today} onChange={(e) => setFlexFrom(e.target.value)}
-                  className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-[14px] outline-none focus:border-ink" />
+                  className="w-full min-w-0 rounded-xl border border-line-strong bg-canvas px-3 py-2.5 text-[14px] outline-none focus:border-ink" />
               </label>
-              <label className="flex-1">
+              <label className="min-w-0 flex-1">
                 <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-muted">Latest</span>
                 <input type="date" value={to0} min={from0} onChange={(e) => setFlexTo(e.target.value)}
-                  className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-[14px] outline-none focus:border-ink" />
+                  className="w-full min-w-0 rounded-xl border border-line-strong bg-canvas px-3 py-2.5 text-[14px] outline-none focus:border-ink" />
               </label>
             </div>
           )}
-          <p className="mt-2.5 text-[12px] leading-snug text-muted">
+          <p className="mt-2.5 text-[13px] leading-snug text-muted">
             We&rsquo;ll show travelers arriving in this window. You add package
             details after you pick one — so no price yet.
           </p>
         </Card>
       </div>
 
-      <div className="pb-safe border-t border-line bg-white px-5 pt-3">
+      <div className="pb-safe border-t border-line bg-canvas px-5 pt-3">
         <Button variant="brand" onClick={explore} disabled={!ready}>
           {!from || !to ? "Set pickup & destination" : "Explore travellers"}
         </Button>

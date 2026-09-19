@@ -118,8 +118,8 @@ export function MatchFlow({
 
       {/* Tracking timeline (after payment) */}
       {reached >= 1 && (
-        <div className="rounded-3xl bg-white p-5 shadow-card">
-          <h3 className="mb-3 text-[13px] font-bold uppercase tracking-wide text-muted">Tracking</h3>
+        <div className="rounded-3xl bg-canvas p-5 shadow-card">
+          <h3 className="mb-3 text-[13px] font-bold uppercase tracking-wide text-ink">Tracking</h3>
           <ol className="flex flex-col">
             {STAGES.map((s, i) => {
               const done = i <= reached;
@@ -127,10 +127,10 @@ export function MatchFlow({
               return (
                 <li key={s} className="flex gap-3">
                   <div className="flex flex-col items-center">
-                    <span className={`grid h-6 w-6 place-items-center rounded-full ${done ? "bg-ink text-white" : "bg-neutral-200 text-transparent"}`}>
+                    <span className={`grid h-6 w-6 place-items-center rounded-full ${done ? "bg-ink text-brand" : "bg-line text-transparent"}`}>
                       <IconCheck width={14} height={14} />
                     </span>
-                    {!last && <span className={`w-0.5 flex-1 ${i < reached ? "bg-ink" : "bg-neutral-200"}`} />}
+                    {!last && <span className={`w-0.5 flex-1 ${i < reached ? "bg-ink" : "bg-line"}`} />}
                   </div>
                   <span className={`pb-4 text-[14px] font-semibold ${done ? "text-ink" : "text-muted"}`}>{s}</span>
                 </li>
@@ -141,8 +141,8 @@ export function MatchFlow({
       )}
 
       {(pickupPhotoUrl || deliveryPhotoUrl) && (
-        <div className="rounded-3xl bg-white p-5 shadow-card">
-          <h3 className="mb-3 text-[13px] font-bold uppercase tracking-wide text-muted">Proof photos</h3>
+        <div className="rounded-3xl bg-canvas p-5 shadow-card">
+          <h3 className="mb-3 text-[13px] font-bold uppercase tracking-wide text-ink">Proof photos</h3>
           <div className="flex flex-wrap gap-3">
             {pickupPhotoUrl && (
               <div className="flex flex-col items-center gap-1">
@@ -192,7 +192,7 @@ export function MatchFlow({
             <div className="flex flex-wrap gap-2">
               {DISPUTE_REASONS.map((r) => (
                 <button key={r.value} onClick={() => setReason(r.value)}
-                  className={`rounded-lg px-2.5 py-1.5 text-[13px] font-semibold ${reason === r.value ? "bg-ink text-white" : "bg-neutral-100 text-ink"}`}>
+                  className={`rounded-lg px-2.5 py-1.5 text-[13px] font-semibold ${reason === r.value ? "bg-brand text-ink" : "bg-surface text-ink"}`}>
                   {r.label}
                 </button>
               ))}
@@ -205,7 +205,7 @@ export function MatchFlow({
                 className="flex-1 rounded-2xl bg-ink py-3 text-[15px] font-semibold text-white active:scale-[0.98] disabled:opacity-40">
                 {pending ? "Reporting…" : "Submit report"}
               </button>
-              <button onClick={() => setShowReport(false)} className="rounded-2xl bg-neutral-100 px-4 text-sm font-semibold text-ink">Cancel</button>
+              <button onClick={() => setShowReport(false)} className="rounded-2xl bg-surface px-4 text-sm font-semibold text-ink">Cancel</button>
             </div>
           </Panel>
         ) : (
@@ -310,7 +310,7 @@ export function MatchFlow({
           <div className="flex justify-center gap-2 py-1">
             {[1, 2, 3, 4, 5].map((n) => (
               <button key={n} onClick={() => setStars(n)} aria-label={`${n} stars`}
-                className={n <= stars ? "text-brand-strong" : "text-neutral-300"}>
+                className={n <= stars ? "text-brand-strong" : "text-line-strong"}>
                 <IconStar width={34} height={34} />
               </button>
             ))}
@@ -356,7 +356,7 @@ function Row({ k, v, strong }: { k: string; v: string; strong?: boolean }) {
   );
 }
 function Panel({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-col gap-3 rounded-3xl bg-white p-5 shadow-card">{children}</div>;
+  return <div className="flex flex-col gap-3 rounded-3xl bg-canvas p-5 shadow-card">{children}</div>;
 }
 function PrimaryBtn({ children, onClick, disabled }: { children: React.ReactNode; onClick: () => void; disabled?: boolean }) {
   return (
@@ -378,7 +378,7 @@ function Toggle({ on, onClick, disabled }: { on: boolean; onClick: () => void; d
       aria-label="Keep door-to-door detour"
       disabled={disabled}
       onClick={onClick}
-      className={`relative mt-0.5 h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-50 ${on ? "bg-brand" : "bg-neutral-300"}`}
+      className={`relative mt-0.5 h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-50 ${on ? "bg-brand" : "bg-line-strong"}`}
     >
       <span className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-all ${on ? "left-[22px]" : "left-0.5"}`} />
     </button>
@@ -389,7 +389,7 @@ function OtpShare({ otp, label, note }: { otp: string; label: string; note?: str
     <div className="rounded-3xl bg-ink px-5 py-4 text-center">
       <div className="text-[12px] font-medium uppercase tracking-wide text-brand/70">{label}</div>
       <div className="mt-1 text-3xl font-black tracking-[0.35em] text-brand">{otp}</div>
-      {note && <div className="mt-1 text-[12px] leading-snug text-white/60">{note}</div>}
+      {note && <div className="mt-1 text-[13px] leading-snug text-muted-invert">{note}</div>}
     </div>
   );
 }

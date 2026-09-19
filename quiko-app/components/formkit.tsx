@@ -3,12 +3,35 @@
 import { IconChevronRight } from "@/components/icons";
 
 export function Card({ children }: { children: React.ReactNode }) {
-  return <div className="mt-3 rounded-3xl bg-white p-4 shadow-card">{children}</div>;
+  return <div className="mt-3 rounded-3xl bg-canvas p-4 shadow-card">{children}</div>;
+}
+
+/** Black step banner for the multi-step send/trip flows. Yellow segments mark
+ *  progress; the black band separates "filling a form" from browsing. */
+export function StepHeader({
+  step, total, label,
+}: {
+  step: number; total: number; label: string;
+}) {
+  return (
+    <div className="border-b border-line bg-canvas px-5 pb-3.5 pt-1">
+      <div className="flex items-center gap-1.5" aria-hidden="true">
+        {Array.from({ length: total }, (_, i) => (
+          <span key={i}
+            className={`h-1.5 flex-1 rounded-full transition-colors ${i < step ? "bg-brand" : "bg-line"}`} />
+        ))}
+      </div>
+      <p className="mt-2 text-[12px] font-bold uppercase tracking-wide text-ink">
+        Step {step} of {total}
+        <span className="ml-2 font-semibold normal-case tracking-normal text-muted">{label}</span>
+      </p>
+    </div>
+  );
 }
 
 export function Label({ children }: { children: React.ReactNode }) {
   return (
-    <span className="mb-2.5 block text-[13px] font-bold uppercase tracking-wide text-muted">
+    <span className="mb-2.5 block text-[13px] font-bold uppercase tracking-wide text-ink">
       {children}
     </span>
   );
@@ -22,15 +45,15 @@ export function FieldButton({
 }) {
   return (
     <button type="button" onClick={onClick}
-      className="flex w-full items-center gap-2.5 px-3 py-3.5 text-left active:bg-neutral-50">
-      <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-bold ${ink ? "bg-ink text-white" : "bg-brand text-ink"}`}>
+      className="flex w-full items-center gap-2.5 px-3 py-3.5 text-left active:bg-brand-soft">
+      <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-bold ${ink ? "bg-ink text-brand" : "bg-brand text-ink"}`}>
         {badge}
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-muted">
           {icon} {label}
         </span>
-        <span className={`block truncate text-[14px] font-semibold ${value ? "text-ink" : "text-muted"}`}>
+        <span className={`block break-words text-[14px] font-semibold ${value ? "text-ink" : "text-muted"}`}>
           {value ?? placeholder}
         </span>
       </span>
@@ -45,11 +68,11 @@ export function Segmented<T extends string>({
   options: { value: T; label: string }[]; value: T; onChange: (v: T) => void;
 }) {
   return (
-    <div className="flex gap-1 rounded-2xl bg-neutral-100 p-1">
+    <div className="flex gap-1 rounded-2xl bg-surface p-1 ring-1 ring-line">
       {options.map((o) => (
         <button key={o.value} type="button" onClick={() => onChange(o.value)}
           className={`flex-1 rounded-xl py-2.5 text-[13px] font-semibold transition-all ${
-            value === o.value ? "bg-white text-ink shadow-sm" : "text-muted"
+            value === o.value ? "bg-brand text-ink shadow-sm" : "text-muted hover:text-ink"
           }`}>
           {o.label}
         </button>
@@ -65,7 +88,7 @@ export function StepBtn({
 }) {
   return (
     <button type="button" onClick={onClick} disabled={disabled} aria-label={label}
-      className="grid h-12 w-12 place-items-center rounded-full bg-neutral-100 text-ink transition-colors active:scale-95 disabled:opacity-30 enabled:hover:bg-neutral-200">
+      className="grid h-12 w-12 place-items-center rounded-full border border-line-strong bg-canvas text-ink transition-colors active:scale-95 disabled:opacity-30 enabled:hover:bg-brand-soft">
       {children}
     </button>
   );

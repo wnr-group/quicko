@@ -2,6 +2,7 @@ import Link from "next/link";
 import { listOpenReports } from "@/lib/queries/reports";
 import { getProfile, isAdminProfile } from "@/lib/auth";
 import { ModerationActions } from "@/components/ModerationActions";
+import { Empty } from "@/components/adminkit";
 import { initials, timeAgo } from "@/core/format";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -18,15 +19,13 @@ export default async function AdminModerationPage() {
       <p className="text-sm text-muted">{items.length} open report{items.length === 1 ? "" : "s"}.</p>
 
       {items.length === 0 ? (
-        <div className="mt-6 rounded-2xl border border-dashed border-line bg-white/60 p-8 text-center text-sm text-muted">
-          Nothing to review. 🎉
-        </div>
+        <Empty>Nothing to review. 🎉</Empty>
       ) : (
-        <div className="mt-4 flex flex-col gap-3">
+        <div className="mt-5 grid gap-4 xl:grid-cols-2">
           {items.map(({ report, reporter, reported, route }) => (
-            <div key={report.id} className="rounded-2xl bg-white p-4 shadow-card">
+            <div key={report.id} className="rounded-2xl border-l-2 border-error bg-canvas p-4 shadow-card">
               <div className="flex items-start gap-3">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-neutral-100 text-xs font-bold text-ink">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface text-xs font-bold text-ink">
                   {initials(reported?.fullName)}
                 </span>
                 <div className="min-w-0 flex-1">
@@ -40,7 +39,7 @@ export default async function AdminModerationPage() {
                       </Link>
                     )}
                     {reported?.status === "suspended" && (
-                      <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-muted">Suspended</span>
+                      <span className="rounded-full bg-error-soft px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-error">Suspended</span>
                     )}
                   </div>
                   {report.detail && <p className="mt-1 text-[14px] text-ink">{report.detail}</p>}

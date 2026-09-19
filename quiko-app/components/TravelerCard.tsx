@@ -36,7 +36,7 @@ export function TravelerCard({
   }
 
   return (
-    <div className="rounded-3xl bg-white p-4 shadow-card">
+    <div className="rounded-3xl bg-canvas p-4 shadow-card">
       <button onClick={() => setOpen((v) => !v)} className="flex w-full items-center gap-3 text-left">
         <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-ink text-sm font-bold text-brand">
           {initials(name)}
@@ -70,7 +70,7 @@ export function TravelerCard({
       </div>
 
       {open && (
-        <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 rounded-2xl bg-neutral-50 p-3 text-[13px]">
+        <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 rounded-2xl bg-surface p-3 text-[13px]">
           <Row k="Verification" v={KYC_LABEL[kycLevel] ?? "Phone verified"} />
           <Row k="Delivers to" v={deliveryArea || "—"} />
           <Row k="Rating" v={`${rating.toFixed(1)} ★`} />
@@ -84,7 +84,7 @@ export function TravelerCard({
         onClick={request}
         disabled={requested || pending || !verified}
         className={`mt-3 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-[15px] font-semibold transition-all active:scale-[0.98] ${
-          requested ? "bg-success-soft text-success" : "bg-ink text-white hover:bg-ink-soft disabled:opacity-50"
+          requested ? "bg-success-soft text-success" : "bg-brand text-ink hover:bg-brand-strong disabled:opacity-50"
         }`}
       >
         {requested ? (<><IconCheck width={18} height={18} /> Request sent</>)
@@ -92,7 +92,7 @@ export function TravelerCard({
           : pending ? "Sending…" : `Request for ${inr(amount)}`}
       </button>
       {!verified && !requested && (
-        <p className="mt-1.5 text-center text-[12px] leading-snug text-muted">
+        <p className="mt-1.5 text-center text-[13px] leading-snug text-muted">
           This traveller hasn&rsquo;t finished identity verification, so they can&rsquo;t
           carry packages yet.
         </p>

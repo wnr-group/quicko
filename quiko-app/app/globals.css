@@ -1,26 +1,40 @@
 @import "tailwindcss";
 
 /* Quiko design system — Tailwind v4 theme.
-   Brand yellow used as a deliberate accent; the rest is calm ink + off-white. */
+   Yellow / white / black. Yellow is the primary brand surface (CTAs, heroes,
+   active states), black carries structure and hierarchy, white is the ground.
+   Every text pairing below is AA or better on its intended background. */
 @theme {
+  /* Brand yellow — the default CTA surface, not a timid accent. */
   --color-brand: #ffd93d;
-  --color-brand-strong: #f5c518;
-  --color-brand-soft: #fff7d6;
+  --color-brand-strong: #f2c200;
+  --color-brand-soft: #fff8db;
 
-  --color-ink: #17171a;
-  --color-ink-soft: #3f3f46;
-  --color-canvas: #f6f6f3;
-  --color-line: #ececec;
+  /* Ink — near-black. Doubles as a full surface colour (black cards/bars). */
+  --color-ink: #0b0b0c;
+  --color-ink-soft: #3a3a40;
 
-  --color-muted: #8a8a8f;
+  /* Ground */
+  --color-canvas: #ffffff;
+  --color-surface: #fafaf8;
 
-  --color-success: #16a34a;
+  /* Hairlines: -line for dividers, -line-strong for card edges on white. */
+  --color-line: #e4e4de;
+  --color-line-strong: #cfcfc6;
+
+  /* Secondary text. AAA on white (6.33) — small 12-13px copy needs the extra
+     weight. NEVER place on brand yellow (4.4); use --color-ink-soft there. */
+  --color-muted: #5f5f66;
+  /* Secondary text for use on ink surfaces (AAA on ink). */
+  --color-muted-invert: #adadb4;
+
+  --color-success: #15803d;
   --color-success-soft: #dcfce7;
   --color-error: #dc2626;
   --color-error-soft: #fee2e2;
-  --color-warning: #d97706;
+  --color-warning: #b45309;
   --color-warning-soft: #fef3c7;
-  --color-info: #2563eb;
+  --color-info: #1d4ed8;
   --color-info-soft: #dbeafe;
 
   --font-sans: var(--font-geist), -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -30,9 +44,13 @@
   --radius-2xl: 1.125rem;
   --radius-3xl: 1.5rem;
 
-  --shadow-card: 0 1px 2px rgba(17, 17, 26, 0.04), 0 4px 16px rgba(17, 17, 26, 0.06);
-  --shadow-pop: 0 8px 30px rgba(17, 17, 26, 0.12);
-  --shadow-brand: 0 8px 24px rgba(255, 217, 61, 0.45);
+  /* The hairline ring is part of the card shadow so white cards keep an edge on
+     the white ground without every call site adding a border. */
+  --shadow-card: 0 0 0 1px rgba(11, 11, 12, 0.07), 0 1px 2px rgba(11, 11, 12, 0.04),
+    0 4px 16px rgba(11, 11, 12, 0.05);
+  --shadow-pop: 0 8px 30px rgba(11, 11, 12, 0.12);
+  --shadow-brand: 0 8px 24px rgba(255, 217, 61, 0.55);
+  --shadow-ink: 0 8px 24px rgba(11, 11, 12, 0.22);
 }
 
 html {
@@ -79,7 +97,7 @@ input[type="range"]::-webkit-slider-thumb {
   width: 24px;
   border-radius: 999px;
   background: var(--color-ink);
-  border: 3px solid #fff;
+  border: 3px solid var(--color-brand);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
   cursor: pointer;
 }
@@ -88,13 +106,17 @@ input[type="range"]::-moz-range-thumb {
   width: 22px;
   border-radius: 999px;
   background: var(--color-ink);
-  border: 3px solid #fff;
+  border: 3px solid var(--color-brand);
   cursor: pointer;
 }
 
 *:focus-visible {
   outline: 2px solid var(--color-ink);
   outline-offset: 2px;
+}
+/* On ink/brand surfaces the black ring disappears — switch it to yellow. */
+.on-ink *:focus-visible {
+  outline-color: var(--color-brand);
 }
 
 @media (prefers-reduced-motion: reduce) {

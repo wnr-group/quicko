@@ -105,7 +105,7 @@ export default function LocationSheet({
       <div className="pt-safe px-4 pb-3 shadow-sm">
         <div className="flex items-center gap-3 py-1">
           <button onClick={onClose} aria-label="Close"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-neutral-100 active:scale-95">
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface active:scale-95">
             <IconArrowLeft />
           </button>
           <h2 className="text-[17px] font-bold">
@@ -130,9 +130,9 @@ export default function LocationSheet({
               {results.map((r, i) => (
                 <li key={i}>
                   <button onClick={() => pick(r)}
-                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-[14px] hover:bg-neutral-50">
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-[14px] hover:bg-brand-soft">
                     <IconMapPin width={15} height={15} className="shrink-0 text-muted" />
-                    <span className="truncate">{r.label}</span>
+                    <span className="line-clamp-2">{r.label}</span>
                   </button>
                 </li>
               ))}
@@ -167,14 +167,14 @@ export default function LocationSheet({
       {/* Confirm bar */}
       <div className="pb-safe border-t border-line px-5 pt-3">
         <div className="mb-3 flex items-start gap-2.5">
-          <span className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full text-[11px] font-bold ${isFrom ? "bg-ink text-white" : "bg-brand text-ink"}`}>
+          <span className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full text-[11px] font-bold ${isFrom ? "bg-ink text-brand" : "bg-brand text-ink"}`}>
             {isFrom ? "A" : "B"}
           </span>
           <div className="min-w-0">
             <div className="text-[11px] font-bold uppercase tracking-wide text-muted">
               {isFrom ? "Pickup" : "Destination"}
             </div>
-            <div className="truncate text-[15px] font-semibold">
+            <div className="break-words text-[15px] font-semibold">
               {labelBusy ? "Locating…" : sel.label}
             </div>
           </div>

@@ -38,13 +38,13 @@ export default function SplashPage() {
         <div className="pb-10 pt-4">
           <Link
             href="/tour"
-            className="flex w-full items-center justify-center rounded-2xl bg-ink px-6 py-4 text-[15px] font-semibold text-white shadow-pop transition-transform active:scale-[0.98]"
+            className="flex w-full items-center justify-center rounded-2xl bg-ink px-6 py-4 text-[15px] font-bold tracking-tight text-brand shadow-pop transition-transform active:scale-[0.98]"
           >
             Get Started
           </Link>
           <Link
             href="/login"
-            className="mt-2.5 flex w-full items-center justify-center rounded-2xl border border-ink/15 bg-transparent px-6 py-3.5 text-[15px] font-semibold text-ink active:scale-[0.98]"
+            className="mt-2.5 flex w-full items-center justify-center rounded-2xl border-2 border-ink bg-transparent px-6 py-3.5 text-[15px] font-bold tracking-tight text-ink transition-transform active:scale-[0.98]"
           >
             Log in
           </Link>

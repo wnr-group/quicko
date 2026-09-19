@@ -12,7 +12,7 @@ export default async function AdminTransactionsPage() {
       <h1 className="text-2xl font-black tracking-tight">Transactions</h1>
       <p className="text-sm text-muted">Most recent {txns.length} across all matches.</p>
 
-      <div className="mt-4 overflow-x-auto rounded-2xl bg-white shadow-card">
+      <div className="mt-4 overflow-x-auto rounded-2xl bg-canvas shadow-card">
         <table className="w-full text-left text-[13px]">
           <thead>
             <tr className="border-b border-line text-[11px] font-bold uppercase tracking-wide text-muted">

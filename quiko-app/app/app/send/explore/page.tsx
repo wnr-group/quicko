@@ -1,12 +1,14 @@
 import Link from "next/link";
+import { placeShort } from "@/core/format";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { TopBar } from "@/components/ui";
+import { StepHeader } from "@/components/formkit";
 import { ExploreTravelerCard } from "@/components/ExploreTravelerCard";
 import { ExploreFilters } from "@/components/ExploreFilters";
 import { ReachFilter } from "@/components/ReachFilter";
-import { IconArrowRight } from "@/components/icons";
+
 import { exploreTrips } from "@/lib/queries/trips";
 import { parseSendParams, toSendQuery } from "@/lib/sendParams";
 
@@ -56,11 +58,18 @@ export default async function ExplorePage({
   return (
     <PhoneFrame>
       <TopBar title="Explore travellers" back />
-      <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-28">
-        <div className="mb-3 flex items-center gap-1.5 rounded-2xl bg-white px-4 py-3 text-[15px] font-bold shadow-card">
-          <span className="truncate">{parsed.from.label}</span>
-          <IconArrowRight width={15} height={15} className="shrink-0 text-muted" />
-          <span className="truncate">{parsed.to.label}</span>
+      <StepHeader step={2} total={3} label="Pick a traveller" />
+      <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-28 pt-3">
+        {/* Locality on one line; the full geocoded address stays available beneath. */}
+        <div className="mb-3 rounded-2xl bg-canvas px-4 py-3 shadow-card">
+          <div className="truncate text-[15px] font-bold">
+            {placeShort(parsed.from.label)}{" "}
+            <span className="font-normal text-muted">&rarr;</span>{" "}
+            {placeShort(parsed.to.label)}
+          </div>
+          <p className="mt-1 text-[13px] leading-snug text-ink-soft">
+            {parsed.from.label} &rarr; {parsed.to.label}
+          </p>
         </div>
 
         <Suspense fallback={null}>
@@ -74,7 +83,7 @@ export default async function ExplorePage({
         )}
 
         {trips.length === 0 ? (
-          <div className="mt-8 rounded-3xl border border-dashed border-line bg-white/60 p-8 text-center">
+          <div className="mt-8 rounded-3xl border-2 border-dashed border-line-strong bg-surface p-8 text-center">
             <p className="text-sm text-muted">
               {all.length === 0
                 ? "No travelers on this route in that window yet — leave it below and we’ll notify you when one shows up."
@@ -83,7 +92,7 @@ export default async function ExplorePage({
           </div>
         ) : (
           <>
-            <p className="mb-2 px-1 text-[13px] font-bold uppercase tracking-wide text-muted">
+            <p className="mb-2 px-1 text-[13px] font-bold uppercase tracking-wide text-ink">
               {trips.length} traveler{trips.length > 1 ? "s" : ""} · {SORT_LABELS[sort] ?? SORT_LABELS.arrival}
             </p>
             <div className="flex flex-col gap-3">
@@ -111,9 +120,9 @@ export default async function ExplorePage({
       {/* Floating "notify me" */}
       <div className="pb-safe pointer-events-none absolute inset-x-0 bottom-0 px-5 pt-8">
         <Link href={detailsHref("notify=1")}
-          className="pointer-events-auto flex w-full flex-col items-center rounded-2xl bg-ink px-5 py-3 text-center text-white shadow-pop active:scale-[0.98]">
-          <span className="text-[15px] font-semibold">Can&rsquo;t find a match?</span>
-          <span className="text-[12px] text-white/70">Leave it here &amp; we&rsquo;ll notify you when one appears</span>
+          className="pointer-events-auto flex w-full flex-col items-center rounded-2xl bg-brand px-5 py-3 text-center shadow-brand transition-transform active:scale-[0.98]">
+          <span className="text-[15px] font-bold text-ink">Can&rsquo;t find a match?</span>
+          <span className="text-[12px] text-ink-soft">Leave it here &amp; we&rsquo;ll notify you when one appears</span>
         </Link>
       </div>
     </PhoneFrame>

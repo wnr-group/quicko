@@ -52,7 +52,7 @@ export function SupportChat({
     <div className="mt-4 flex flex-col gap-3">
       {threadId && (
         <div className="flex items-center justify-between">
-          <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase ${status === "closed" ? "bg-neutral-100 text-muted" : "bg-brand text-ink"}`}>
+          <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase ${status === "closed" ? "bg-surface text-muted" : "bg-brand text-ink"}`}>
             {status === "closed" ? "Resolved" : "Open"}
           </span>
           <button
@@ -65,7 +65,7 @@ export function SupportChat({
         </div>
       )}
       {messages.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-line bg-white/60 p-6 text-center text-sm text-muted">
+        <div className="rounded-2xl border-2 border-dashed border-line-strong bg-surface p-6 text-center text-sm text-muted">
           Tell us what you need help with — the Quiko team will reply here.
         </div>
       ) : (
@@ -74,7 +74,7 @@ export function SupportChat({
             <div key={m.id} className={`flex ${m.fromStaff ? "justify-start" : "justify-end"}`}>
               <div
                 className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-[14px] ${
-                  m.fromStaff ? "rounded-bl-sm bg-white text-ink shadow-card" : "rounded-br-sm bg-ink text-white"
+                  m.fromStaff ? "rounded-bl-sm bg-canvas text-ink shadow-card" : "rounded-br-sm bg-brand text-ink"
                 }`}
               >
                 {m.fromStaff && <div className="mb-0.5 text-[11px] font-bold text-brand-strong">Quiko Support</div>}
@@ -100,13 +100,13 @@ export function SupportChat({
           rows={1}
           placeholder="Message support…"
           maxLength={2000}
-          className="max-h-28 min-h-10 flex-1 resize-none rounded-xl bg-neutral-50 px-3.5 py-2 text-[15px] outline-none"
+          className="max-h-28 min-h-10 flex-1 resize-none rounded-xl bg-surface px-3.5 py-2 text-[15px] outline-none"
         />
         <button
           onClick={send}
           disabled={pending || !text.trim()}
           aria-label="Send"
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ink text-white active:scale-95 disabled:opacity-40"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand text-ink active:scale-95 disabled:opacity-40"
         >
           <IconArrowRight width={18} height={18} />
         </button>

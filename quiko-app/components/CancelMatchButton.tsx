@@ -40,7 +40,7 @@ export function CancelMatchButton({
   }
 
   return (
-    <div className="mt-3 rounded-2xl bg-neutral-50 p-3 text-center">
+    <div className="mt-3 rounded-2xl bg-surface p-3 text-center">
       <p className="text-[13px] font-semibold text-ink">
         {paid ? "Cancel and refund the payment?" : "Cancel this match?"}
       </p>
@@ -49,7 +49,7 @@ export function CancelMatchButton({
         <button onClick={go} disabled={pending} className="rounded-xl bg-error px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-40">
           {pending ? "Cancelling…" : "Yes, cancel"}
         </button>
-        <button onClick={() => setConfirm(false)} disabled={pending} className="rounded-xl bg-neutral-200 px-4 py-2 text-[13px] font-semibold text-ink">
+        <button onClick={() => setConfirm(false)} disabled={pending} className="rounded-xl bg-line px-4 py-2 text-[13px] font-semibold text-ink">
           Keep it
         </button>
       </div>

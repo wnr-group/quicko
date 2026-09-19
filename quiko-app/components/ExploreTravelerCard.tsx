@@ -12,7 +12,7 @@ export function ExploreTravelerCard({
 }) {
   const Transport = TRANSPORT_ICONS[transport] ?? TRANSPORT_ICONS.bus;
   return (
-    <div className="rounded-3xl bg-white p-4 shadow-card">
+    <div className="rounded-3xl bg-canvas p-4 shadow-card">
       <Link href={href} className="flex items-center gap-3 active:scale-[0.99]">
         <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-ink text-sm font-bold text-brand">
           {initials(name)}

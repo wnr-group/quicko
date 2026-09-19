@@ -27,7 +27,7 @@ export function RequestActions({ requestId, tripId }: { requestId: string; tripI
         <button
           disabled={pending}
           onClick={() => run(() => declineRequestAction(requestId, tripId))}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-neutral-100 py-3 text-[15px] font-semibold text-ink disabled:opacity-40"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-surface py-3 text-[15px] font-semibold text-ink disabled:opacity-40"
         >
           <IconX width={16} height={16} /> Decline
         </button>

@@ -4,7 +4,7 @@ import { getAdminMatch } from "@/lib/queries/admin";
 import { getOpenDisputeForMatch } from "@/lib/queries/disputes";
 import { getProfile, isAdminProfile } from "@/lib/auth";
 import { AdminMatchActions } from "@/components/AdminMatchActions";
-import { inr, formatPhone, timeAgo } from "@/core/format";
+import { inr, formatPhone, timeAgo, initials } from "@/core/format";
 
 const REASON_LABELS: Record<string, string> = {
   lost: "Package lost", damaged: "Damaged", wrong_otp: "OTP issue", no_show: "Traveller no-show", other: "Other",
@@ -47,7 +47,11 @@ export default async function AdminMatchPage({ params }: { params: Promise<{ id:
 
       <AdminMatchActions matchId={match.id} status={match.status} admin={admin} />
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+      {/* Detail on the left, state on the right — a single stacked column left
+          most of a console screen empty and pushed the chat far below the fold. */}
+      <div className="mt-4 grid items-start gap-4 xl:grid-cols-3">
+      <div className="flex flex-col gap-4 xl:col-span-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         <Card title="Sender">
           <Party id={sender.id} name={sender.fullName} phone={sender.phone} />
         </Card>
@@ -82,17 +86,6 @@ export default async function AdminMatchPage({ params }: { params: Promise<{ id:
         </Card>
       )}
 
-      <Card title="Timeline">
-        <ol className="flex flex-col gap-1.5">
-          {TIMELINE.map((s, i) => (
-            <li key={s} className="flex items-center gap-2 text-[13px]">
-              <span className={`h-2.5 w-2.5 rounded-full ${i <= reached ? "bg-ink" : "bg-neutral-300"}`} />
-              <span className={i <= reached ? "font-semibold text-ink" : "text-muted"}>{s.replace("_", " ")}</span>
-              {stageTime(s) && <span className="ml-auto tabular-nums text-[12px] text-muted">{stageTime(s)}</span>}
-            </li>
-          ))}
-        </ol>
-      </Card>
 
       <Card title={`Transactions (${transactions.length})`}>
         {transactions.length === 0 ? (
@@ -137,26 +130,101 @@ export default async function AdminMatchPage({ params }: { params: Promise<{ id:
           </div>
         )}
       </Card>
+      </div>
+
+      {/* State lives in a narrow sticky rail; the wide column holds the tables. */}
+      <div className="flex flex-col gap-4 xl:sticky xl:top-8">
+      <Card title="Timeline">
+        {/* A connected rail, not a list of dots: filled to where the match has
+            actually got to, hollow and dashed for what is still outstanding. */}
+        <ol className="relative">
+          {TIMELINE.map((s, i) => {
+            const done = i < reached;
+            const current = i === reached;
+            const last = i === TIMELINE.length - 1;
+            const when = stageTime(s);
+            return (
+              <li key={s} className="relative flex items-start gap-3 pb-4 last:pb-0">
+                {!last && (
+                  <span
+                    aria-hidden="true"
+                    className={`absolute bottom-0 left-[5.5px] top-4 w-px ${
+                      done ? "bg-ink" : "bg-line-strong"
+                    }`}
+                  />
+                )}
+                <span
+                  className={`relative z-10 mt-1 h-3 w-3 shrink-0 rounded-full ${
+                    current
+                      ? "bg-brand ring-2 ring-ink"
+                      : done
+                        ? "bg-ink"
+                        : "border-2 border-line-strong bg-canvas"
+                  }`}
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-2">
+                    <span
+                      className={`text-[13px] capitalize ${
+                        done || current ? "font-bold text-ink" : "text-muted"
+                      }`}
+                    >
+                      {s.replace("_", " ")}
+                    </span>
+                    {current && (
+                      <span className="rounded-full bg-brand px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ink">
+                        Now
+                      </span>
+                    )}
+                  </span>
+                  <span className="block text-[12px] tabular-nums text-muted">{when ?? "—"}</span>
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+      </Card>
+      </div>
+      </div>
     </>
   );
 }
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="mt-3 rounded-2xl bg-white p-4 shadow-card">
-      <h2 className="mb-2 text-[12px] font-bold uppercase tracking-wide text-muted">{title}</h2>
+    <div className="rounded-2xl bg-canvas p-4 shadow-card">
+      <h2 className="mb-2.5 flex items-center gap-2 text-[12px] font-bold uppercase tracking-wide text-ink">
+        {title}
+        <span aria-hidden="true" className="h-px flex-1 bg-line" />
+      </h2>
       {children}
     </div>
   );
 }
+/** Label column is fixed so the pair reads together; justify-between stretched
+ *  "Contents" and its value to opposite ends of the screen. */
 function KV({ k, v }: { k: string; v: string }) {
-  return <div className="flex justify-between gap-3 py-0.5 text-[14px]"><span className="text-muted">{k}</span><span className="text-right font-semibold">{v}</span></div>;
+  return (
+    <div className="grid grid-cols-[130px_1fr] gap-3 border-b border-line py-1.5 text-[14px] last:border-0">
+      <span className="text-muted">{k}</span>
+      <span className="break-words font-semibold">{v}</span>
+    </div>
+  );
 }
 function Party({ id, name, phone }: { id: string; name: string | null; phone: string }) {
   return (
-    <Link href={`/admin/users/${id}`} className="flex items-center justify-between">
-      <span className="font-bold">{name ?? "—"}</span>
-      <span className="text-[13px] text-muted">{formatPhone(phone)} →</span>
+    <Link
+      href={`/admin/users/${id}`}
+      className="-m-1 flex items-center gap-3 rounded-xl p-1 transition-colors hover:bg-brand-soft"
+    >
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ink text-[12px] font-bold text-brand">
+        {initials(name)}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate font-bold">{name ?? "—"}</span>
+        <span className="block text-[13px] text-muted">{formatPhone(phone)}</span>
+      </span>
+      <span className="shrink-0 text-muted">&rarr;</span>
     </Link>
   );
 }
@@ -172,8 +240,12 @@ function Proof({ label, src }: { label: string; src: string }) {
 function StatusPill({ status }: { status: string }) {
   const tone =
     status === "disputed" ? "bg-error-soft text-error"
-      : status === "cancelled" ? "bg-neutral-100 text-muted"
+      : status === "cancelled" ? "bg-surface text-muted"
       : status === "completed" || status === "delivered" ? "bg-success-soft text-success"
       : "bg-brand text-ink";
-  return <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${tone}`}>{status}</span>;
+  return (
+    <span className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${tone}`}>
+      {status}
+    </span>
+  );
 }
