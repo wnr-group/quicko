@@ -13,7 +13,7 @@ export default function SplashPage() {
           <h1 className="mt-6 text-[2.6rem] font-black leading-none tracking-tight">
             Quiko
           </h1>
-          <p className="mt-2 text-base font-semibold text-ink-soft">
+          <p className="mt-2.5 text-[13px] font-bold uppercase tracking-[0.22em] text-ink">
             Just Quick As That
           </p>
 
@@ -29,9 +29,12 @@ export default function SplashPage() {
             <RouteEnd label="Deliver" />
           </div>
 
-          <p className="mt-10 max-w-[16rem] text-[15px] leading-relaxed text-ink-soft">
-            Send packages with travelers already going your way. Faster, cheaper,
-            greener.
+          <p className="mt-10 max-w-[17rem] text-[17px] font-semibold leading-snug text-ink">
+            Same People. New Possibilities.
+          </p>
+          <p className="mt-2 max-w-[16rem] text-[15px] leading-relaxed text-ink-soft">
+            Your parcel travels with real people already going your way. Faster,
+            cheaper, greener.
           </p>
         </div>
 
@@ -50,6 +53,9 @@ export default function SplashPage() {
           </Link>
           <p className="mt-3 text-center text-[13px] text-ink-soft">
             Browse free — sign in only when you send
+          </p>
+          <p className="mt-3 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-wnr">
+            by WnR
           </p>
         </div>
       </div>

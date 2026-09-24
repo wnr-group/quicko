@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
   stageLabel: { fontWeight: "700" },
   error: { color: colors.error, fontWeight: "600" },
   otpShare: { backgroundColor: colors.ink, borderRadius: radius.xl, padding: 16, alignItems: "center" },
-  otpShareLabel: { color: "rgba(255,217,61,0.7)", fontSize: 12, fontWeight: "600", textTransform: "uppercase", textAlign: "center" },
+  otpShareLabel: { color: "rgba(253,220,43,0.7)", fontSize: 12, fontWeight: "600", textTransform: "uppercase", textAlign: "center" },
   otpShareNote: { color: "rgba(255,255,255,0.6)", fontSize: 12, marginTop: 4, textAlign: "center" },
   otpShareCode: { color: colors.brand, fontSize: 34, fontWeight: "900", letterSpacing: 10, marginTop: 4 },
   stars: { flexDirection: "row", justifyContent: "center", gap: 8, paddingVertical: 6 },

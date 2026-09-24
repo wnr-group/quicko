@@ -14,7 +14,7 @@ export function leafletHtml(lat = 13.0827, lng = 80.2707): string {
   #q{flex:1;border:0;border-radius:12px;padding:12px 14px;font-size:15px;box-shadow:0 2px 10px rgba(0,0,0,.15);outline:none}
   #results{position:absolute;top:56px;left:12px;right:12px;z-index:700;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,.18)}
   #results div{padding:11px 14px;border-bottom:1px solid #eee;font-size:14px}
-  #confirm{position:absolute;left:12px;right:12px;bottom:14px;z-index:700;background:#17171a;color:#ffd93d;border:0;border-radius:16px;padding:16px;font-size:16px;font-weight:800}
+  #confirm{position:absolute;left:12px;right:12px;bottom:14px;z-index:700;background:#000000;color:#fddc2b;border:0;border-radius:16px;padding:16px;font-size:16px;font-weight:800}
 </style></head><body>
 <div id="map"></div>
 <div id="pin">📍</div>

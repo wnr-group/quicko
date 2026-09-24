@@ -5,13 +5,14 @@
    active states), black carries structure and hierarchy, white is the ground.
    Every text pairing below is AA or better on its intended background. */
 @theme {
-  /* Brand yellow — the default CTA surface, not a timid accent. */
-  --color-brand: #ffd93d;
-  --color-brand-strong: #f2c200;
-  --color-brand-soft: #fff8db;
+  /* Quiko Yellow (#FDDC2B) — the primary brand surface: CTAs, heroes, active
+     states, app icon. The colour Quiko is recognised by. */
+  --color-brand: #fddc2b;
+  --color-brand-strong: #eac50e;
+  --color-brand-soft: #fff7cf;
 
-  /* Ink — near-black. Doubles as a full surface colour (black cards/bars). */
-  --color-ink: #0b0b0c;
+  /* Quiko Black (#000000) — dominant logo/wordmark colour, dark surfaces. */
+  --color-ink: #000000;
   --color-ink-soft: #3a3a40;
 
   /* Ground */
@@ -28,6 +29,9 @@
   /* Secondary text for use on ink surfaces (AAA on ink). */
   --color-muted-invert: #adadb4;
 
+  /* WnR Green — endorsement only: the "by WnR" authorship credit. */
+  --color-wnr: #103a26;
+
   --color-success: #15803d;
   --color-success-soft: #dcfce7;
   --color-error: #dc2626;
@@ -37,7 +41,8 @@
   --color-info: #1d4ed8;
   --color-info-soft: #dbeafe;
 
-  --font-sans: var(--font-geist), -apple-system, BlinkMacSystemFont, "Segoe UI",
+  /* Poppins — the brand's rounded geometric sans (per brand guidelines §4). */
+  --font-sans: var(--font-poppins), -apple-system, BlinkMacSystemFont, "Segoe UI",
     Roboto, "Helvetica Neue", Arial, sans-serif;
 
   --radius-xl: 0.875rem;
@@ -46,11 +51,11 @@
 
   /* The hairline ring is part of the card shadow so white cards keep an edge on
      the white ground without every call site adding a border. */
-  --shadow-card: 0 0 0 1px rgba(11, 11, 12, 0.07), 0 1px 2px rgba(11, 11, 12, 0.04),
-    0 4px 16px rgba(11, 11, 12, 0.05);
-  --shadow-pop: 0 8px 30px rgba(11, 11, 12, 0.12);
-  --shadow-brand: 0 8px 24px rgba(255, 217, 61, 0.55);
-  --shadow-ink: 0 8px 24px rgba(11, 11, 12, 0.22);
+  --shadow-card: 0 0 0 1px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.04),
+    0 4px 16px rgba(0, 0, 0, 0.05);
+  --shadow-pop: 0 8px 30px rgba(0, 0, 0, 0.12);
+  --shadow-brand: 0 8px 24px rgba(253, 220, 43, 0.55);
+  --shadow-ink: 0 8px 24px rgba(0, 0, 0, 0.22);
 }
 
 html {
