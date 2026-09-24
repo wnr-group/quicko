@@ -25,7 +25,7 @@ export default async function WalletPage() {
           <p className="text-[13px] font-semibold uppercase tracking-wide text-ink-soft">Total earned</p>
           <p className="mt-1 text-4xl font-black tracking-tight text-ink">{inr(wallet.earned)}</p>
           <p className="mt-1 text-[13px] text-ink-soft">
-            across {wallet.deliveries} deliver{wallet.deliveries === 1 ? "y" : "ies"} · after 2% fee
+            across {wallet.deliveries} deliver{wallet.deliveries === 1 ? "y" : "ies"} · after 10% fee
           </p>
         </div>
 

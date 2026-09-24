@@ -23,7 +23,7 @@ export default function Wallet() {
           <View style={styles.hero}>
             <Text style={styles.heroLabel}>Total earned</Text>
             <Text style={styles.heroValue}>{inr(w.earned)}</Text>
-            <Text style={styles.heroSub}>across {w.deliveries} deliver{w.deliveries === 1 ? "y" : "ies"} · after 2% fee</Text>
+            <Text style={styles.heroSub}>across {w.deliveries} deliver{w.deliveries === 1 ? "y" : "ies"} · after 10% fee</Text>
           </View>
 
           {w.pending > 0 && (

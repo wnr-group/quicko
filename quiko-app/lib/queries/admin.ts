@@ -4,6 +4,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import { profiles, packages, trips, matches, transactions, messages, matchEvents } from "@/db/schema";
 import { detourKm } from "@/core/geo";
+import { QUIKO_COMMISSION_RATE } from "@/core/pricing";
 
 const DONE = ["delivered", "completed"] as const;
 const N = sql<number>`count(*)`;
@@ -29,7 +30,7 @@ export async function getPlatformStats() {
     matches: Number(m?.n ?? 0),
     delivered: Number(done?.n ?? 0),
     gmv,
-    commission: Math.round(gmv * 0.02),
+    commission: Math.round(gmv * QUIKO_COMMISSION_RATE),
   };
 }
 
