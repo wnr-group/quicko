@@ -13,6 +13,7 @@ export const createPackageSchema = z
     weightKg: z.number().min(0.1).max(15),
     declaredValue: z.number().int().min(0).max(1_000_000).optional(),
     timePreference: z.enum(["same_day", "next_day", "flexible"]),
+    serviceLevel: z.enum(["flexible", "standard", "fast", "express"]).default("standard"),
     description: z.string().trim().min(3, "Add a short description").max(300),
     receiverName: z.string().trim().min(2).max(60).optional(),
     receiverPhone: z

@@ -1,0 +1,2 @@
+CREATE TYPE "public"."service_level" AS ENUM('flexible', 'standard', 'fast', 'express');--> statement-breakpoint
+ALTER TABLE "packages" ADD COLUMN "service_level" "service_level" DEFAULT 'standard' NOT NULL;

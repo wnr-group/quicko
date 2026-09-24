@@ -25,6 +25,14 @@ export const timePrefEnum = pgEnum("time_preference", [
   "next_day",
   "flexible",
 ]);
+// Sender-chosen price/speed tier (Studio Forge framework §10). Owns the price
+// multiplier; independent of time_preference, which is the arrival date window.
+export const serviceLevelEnum = pgEnum("service_level", [
+  "flexible",
+  "standard",
+  "fast",
+  "express",
+]);
 export const packageStatusEnum = pgEnum("package_status", [
   "active",
   "matched",
@@ -138,6 +146,7 @@ export const packages = pgTable("packages", {
   weightKg: real("weight_kg").notNull(),
   declaredValue: integer("declared_value").notNull(),
   timePreference: timePrefEnum("time_preference").notNull(),
+  serviceLevel: serviceLevelEnum("service_level").notNull().default("standard"),
   description: text("description"),
   receiverName: text("receiver_name"),
   receiverPhone: text("receiver_phone"),
