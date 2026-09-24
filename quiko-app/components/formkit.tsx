@@ -100,6 +100,14 @@ export const TIME_OPTIONS = [
   { value: "flexible" as const, label: "Flexible" },
 ];
 
+// Sender price/speed tier (Studio Forge §10). Flexible trades speed for a 35% off.
+export const SERVICE_OPTIONS = [
+  { value: "flexible" as const, label: "Flexible" },
+  { value: "standard" as const, label: "Standard" },
+  { value: "fast" as const, label: "Fast" },
+  { value: "express" as const, label: "Express" },
+];
+
 /** 4-hour departure/arrival windows. Value = start of the window (HH:MM). */
 export const TIME_WINDOWS = [
   { value: "00:00", label: "12 – 4 AM" },

@@ -35,6 +35,7 @@ export default async function EditPackagePage({
           weightKg: pkg.weightKg,
           declaredValue: pkg.declaredValue,
           timePreference: pkg.timePreference,
+          serviceLevel: pkg.serviceLevel,
           offerPrice: pkg.offerPrice,
           description: pkg.description,
           receiverName: pkg.receiverName,

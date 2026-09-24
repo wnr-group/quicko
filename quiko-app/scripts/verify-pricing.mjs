@@ -37,11 +37,12 @@ near(weightCharge(3), 30, "weight(3 kg) = ₹30");
 near(weightCharge(8), 70, "weight(8 kg) = ₹70");
 near(weightCharge(15), 120, "weight(15 kg) = ₹120");
 
-// ── Engine composition — what the app quotes TODAY (512 km, 3 kg, no detour) ──
-// pre-service = 60 + 547.80 + 30 = 637.80, then × service multiplier.
-near(calculatePrice({ distanceKm: 512, weightKg: 3, timePreference: "flexible" }).maxPrice, 415, "engine flexible (×0.65) = ₹415");
-near(calculatePrice({ distanceKm: 512, weightKg: 3, timePreference: "next_day" }).maxPrice, 638, "engine next_day/Standard (×1.0) = ₹638");
-near(calculatePrice({ distanceKm: 512, weightKg: 3, timePreference: "same_day" }).maxPrice, 829, "engine same_day/Express (×1.3) = ₹829");
+// ── Engine composition — the sender's quote by service level (512 km, 3 kg) ──
+// pre-service = 60 + 547.80 + 30 = 637.80, then × service multiplier (no detour).
+near(calculatePrice({ distanceKm: 512, weightKg: 3, serviceLevel: "flexible" }).maxPrice, 415, "engine Flexible (×0.65) = ₹415");
+near(calculatePrice({ distanceKm: 512, weightKg: 3, serviceLevel: "standard" }).maxPrice, 638, "engine Standard (×1.0) = ₹638");
+near(calculatePrice({ distanceKm: 512, weightKg: 3, serviceLevel: "fast" }).maxPrice, 702, "engine Fast (×1.1) = ₹702");
+near(calculatePrice({ distanceKm: 512, weightKg: 3, serviceLevel: "express" }).maxPrice, 829, "engine Express (×1.3) = ₹829");
 
 // ── Multiplier constants match the spec's four tiers ──
 near(SERVICE_MULTIPLIERS.flexible, 0.65, "multiplier Flexible = 0.65");
