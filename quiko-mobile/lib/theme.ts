@@ -1,8 +1,8 @@
 // Brand tokens mirrored from the web app's globals.css so the two apps look identical.
 export const colors = {
-  brand: "#ffd93d",
-  brandSoft: "#fff6d1",
-  ink: "#17171a",
+  brand: "#fddc2b",
+  brandSoft: "#fff7cf",
+  ink: "#000000",
   inkSoft: "#3f3f46",
   canvas: "#f6f6f3",
   white: "#ffffff",

@@ -153,8 +153,8 @@ export default function LocationSheet({
         <div className="pointer-events-none absolute left-1/2 top-1/2 z-[500] -translate-x-1/2 -translate-y-full">
           <svg width="36" height="48" viewBox="0 0 30 40">
             <path d="M15 0C6.7 0 0 6.7 0 15c0 10 15 25 15 25s15-15 15-25C30 6.7 23.3 0 15 0Z"
-              fill={isFrom ? "#17171a" : "#ffd93d"} />
-            <circle cx="15" cy="15" r="5" fill={isFrom ? "#fff" : "#17171a"} />
+              fill={isFrom ? "#000000" : "#fddc2b"} />
+            <circle cx="15" cy="15" r="5" fill={isFrom ? "#fff" : "#000000"} />
           </svg>
         </div>
 
