@@ -114,19 +114,35 @@ export function calculatePrice(input: PriceInput): PriceBreakdown {
 
 // ---- Traveller detour ("travel an extra mile to earn more") ----
 // Every trip includes a free 2 km detour. Beyond that, a traveller who opts in
-// (up to +10 km willingness) earns ₹20 per extra km of ACTUAL detour a package
-// adds to their route. See geo.detourKm for how the distance is measured.
+// earns a door-service fee for the ACTUAL detour a package adds to their route.
+// See geo.detourKm for how the distance is measured.
 //
-// NOTE: the Studio Forge framework prices detour on a proportional slab table
-// (up to 24 km) folded under the service multiplier. Adopting that is tracked
-// for PR-2, since it is entangled with the traveller willingness slider UI.
+// Priced on the Studio Forge framework's proportional slab table (§12): the
+// charge scales linearly WITHIN a band — fee = bandMax × actualKm / bandUpperKm.
+// e.g. a 4 km detour sits in the 2–5 km band → 40 × 4 / 5 = ₹32.
+const DETOUR_SLABS: { upto: number; max: number }[] = [
+  { upto: 2, max: 0 }, // free
+  { upto: 5, max: 40 },
+  { upto: 8, max: 60 },
+  { upto: 12, max: 80 },
+  { upto: 15, max: 100 },
+  { upto: 18, max: 130 },
+  { upto: 24, max: 160 },
+];
+
 export const FREE_DETOUR_KM = 2;
-export const DETOUR_RATE = 20; // ₹ per km beyond the free 2 km
-export const MAX_EXTRA_DETOUR_KM = 10; // slider cap the traveller can offer
+export const MAX_EXTRA_DETOUR_KM = 10; // slider cap the traveller can offer (extra km beyond free)
 
 /** Door-service fee for a given actual detour (₹0 within the free 2 km). */
 export function detourFee(detourKm: number): number {
-  return Math.max(0, Math.round(detourKm) - FREE_DETOUR_KM) * DETOUR_RATE;
+  const km = Math.round(detourKm);
+  if (km <= FREE_DETOUR_KM) return 0;
+  for (const { upto, max } of DETOUR_SLABS) {
+    if (km <= upto) return Math.round((max * km) / upto);
+  }
+  // Beyond the table's 24 km ceiling: hold at the top band's proportional rate.
+  const top = DETOUR_SLABS[DETOUR_SLABS.length - 1];
+  return Math.round((top.max * km) / top.upto);
 }
 
 export const QUIKO_COMMISSION_RATE = 0.1; // 10%
