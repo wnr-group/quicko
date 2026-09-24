@@ -3,7 +3,7 @@ import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } fro
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "@/components/ui";
-import { api, IS_MOCK } from "@/lib/api";
+import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { colors, radius } from "@/lib/theme";
 
@@ -96,7 +96,7 @@ export default function Login() {
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            {IS_MOCK ? "Mock mode — any number + any code signs you in." : "Dev — any number works with code 123456."}
+            We&rsquo;ll text you a one-time code to sign in.
           </Text>
           <Text style={styles.tc}>
             By continuing, you agree to our{" "}

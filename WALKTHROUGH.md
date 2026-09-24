@@ -21,7 +21,7 @@ npm run db:fixtures     # ← walkthrough dataset (see README "Seeding")
 npm run dev
 ```
 
-Everything mocks OTP — log in with any of these phones + code **`123456`**:
+Everything mocks OTP — log in with any of these phones + code **`3456`**:
 
 | Phone | Who | Use it to see |
 |---|---|---|
@@ -106,7 +106,7 @@ the assist-only tier (`profiles.staff_role`).
 Three external services run in free/mock mode locally and swap to real providers
 via one env var each (see `.env.example`):
 - **Payments** — simulated escrow (no real money). Real: Cashfree Easy Split.
-- **SMS OTP** — mock (code = `123456`). Real: MSG91.
+- **SMS OTP** — mock (code = `3456`). Real: MSG91.
 - **Maps** — free OpenStreetMap. Real: MapTiler.
 
 ---

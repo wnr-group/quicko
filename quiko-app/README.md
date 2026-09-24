@@ -12,7 +12,7 @@ npm run db:migrate && npm run db:seed
 npm run dev                    # http://localhost:3000
 ```
 
-Dev login: any phone + OTP `123456`.
+Dev login: any phone + OTP `3456`.
 
 More detail:
 - `ARCHITECTURE.md` — how the code is organized.

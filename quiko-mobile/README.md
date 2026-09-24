@@ -18,7 +18,7 @@ It all runs against a **mock API** (`lib/api.ts`, `EXPO_PUBLIC_MOCK=true`) so th
 screens are fully demo-navigable in isolation — actions (pay, advance, confirm
 OTP, send message, submit KYC) update local state so flows feel real. The mock
 methods mirror the exact request/response shapes the real endpoints must
-implement. Mock delivery OTP is **4321**.
+implement. Mock delivery OTP is **3456**.
 
 ## Run it
 

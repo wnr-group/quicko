@@ -2,7 +2,7 @@
 // flow without clicking through the whole app first. Idempotent (fixed UUIDs):
 // safe to run repeatedly. Run:  npm run db:fixtures
 //
-// Log in with the mock OTP 123456 and explore:
+// Log in with the mock OTP 3456 and explore:
 //   918888800001  Sam Sender      — active package + matches in every state
 //   918888800002  Tara Traveller  — trips, one carrying + one delivered
 //   919999900001  Admin           — full admin console
@@ -75,7 +75,7 @@ try {
     // ── Matches (one per state) ──
     const match = (id, pkgId, tripId, status, price, detourKm, detourFee) => sql`insert into matches
       (id, package_id, trip_id, sender_id, traveler_id, agreed_price, detour_km, detour_fee, detour_opted_out, detour_self_collect, status, delivery_otp)
-      values (${id}, ${pkgId}, ${tripId}, ${SAM}, ${TARA}, ${price}, ${detourKm}, ${detourFee}, false, false, ${status}, '4321')`;
+      values (${id}, ${pkgId}, ${tripId}, ${SAM}, ${TARA}, ${price}, ${detourKm}, ${detourFee}, false, false, ${status}, '3456')`;
     await match(M("01"), P("01"), T("01"), "paid", 560, 0, 0);
     await match(M("02"), P("02"), T("02"), "completed", 620, 5, 60);
     await match(M("03"), P("03"), T("03"), "disputed", 560, 0, 0);
@@ -123,7 +123,7 @@ try {
       values (null, ${TARA}, ${M("01")}, 'auto_contact', 'Tried to share a phone number in chat')`;
   });
 
-  console.log("✓ Fixtures loaded. Log in (OTP 123456) as:");
+  console.log("✓ Fixtures loaded. Log in (OTP 3456) as:");
   console.log("    918888800001  Sam Sender     — active package + 4 matches (paid / completed / disputed / cancelled)");
   console.log("    918888800002  Tara Traveller — trips, carrying + delivered");
   console.log("    919999900001  Admin          — dashboard, disputes, moderation, etc.");

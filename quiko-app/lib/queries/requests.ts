@@ -13,6 +13,10 @@ import type { Role } from "@/core/types";
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 function genOtp(): string {
+  // Demo/mock mode (no real SMS provider): use the one common dummy OTP so a
+  // single code works for every hand-off. With MSG91 configured, pickup/delivery
+  // codes are randomised as normal.
+  if (!process.env.MSG91_AUTH_KEY) return "3456";
   return String(randomInt(1000, 10000)); // 4-digit
 }
 
