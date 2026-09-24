@@ -2,9 +2,9 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { Button } from "@/components/ui";
-import { Card, Label, StepBtn, StepHeader } from "@/components/formkit";
+import { Card, Label, Segmented, StepBtn, StepHeader, SERVICE_OPTIONS } from "@/components/formkit";
 import { IconPlus, IconMinus } from "@/components/icons";
-import { calculatePrice } from "@/core/pricing";
+import { calculatePrice, type ServiceLevel } from "@/core/pricing";
 import { roadDistanceKm } from "@/core/geo";
 import { dateShort, placeShort } from "@/core/format";
 import { createFromExploreAction } from "@/app/app/actions";
@@ -20,6 +20,7 @@ export function ExploreDetailsForm({
   travelerWhen?: string;
 }) {
   const [weightKg, setWeightKg] = useState(1);
+  const [serviceLevel, setServiceLevel] = useState<ServiceLevel>("standard");
   const [description, setDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -27,8 +28,8 @@ export function ExploreDetailsForm({
   const distance = roadDistanceKm(params.from, params.to);
   // Price is computed here but never shown — the sender sees it at payment.
   const breakdown = useMemo(
-    () => calculatePrice({ weightKg, distanceKm: distance, timePreference: params.timePreference }),
-    [weightKg, distance, params.timePreference],
+    () => calculatePrice({ weightKg, distanceKm: distance, serviceLevel }),
+    [weightKg, distance, serviceLevel],
   );
   const descOk = description.trim().length >= 3;
   const ready = distance > 0 && descOk;
@@ -46,7 +47,7 @@ export function ExploreDetailsForm({
           fromLabel: params.from.label, fromLat: params.from.lat, fromLng: params.from.lng,
           toLabel: params.to.label, toLat: params.to.lat, toLng: params.to.lng,
           travelDate: params.dateFrom, dateTo: params.dateTo,
-          weightKg, timePreference: params.timePreference,
+          weightKg, timePreference: params.timePreference, serviceLevel,
           offerPrice: breakdown.maxPrice,
           description: description.trim(),
         },
@@ -94,6 +95,22 @@ export function ExploreDetailsForm({
               <IconPlus />
             </StepBtn>
           </div>
+        </Card>
+
+        {/* Service level (price/speed tier) */}
+        <Card>
+          <Label>Service level</Label>
+          <Segmented options={SERVICE_OPTIONS} value={serviceLevel}
+            onChange={(v) => setServiceLevel(v as ServiceLevel)} />
+          <p className="mt-2.5 text-[13px] leading-snug text-muted">
+            {serviceLevel === "flexible"
+              ? "Flexible saves you 35% — you wait for a matching journey."
+              : serviceLevel === "express"
+                ? "Express prioritises the fastest travellers, at a premium."
+                : serviceLevel === "fast"
+                  ? "Fast leans toward quicker journeys for a small premium."
+                  : "Standard — the balanced default."}
+          </p>
         </Card>
 
         {/* Description (mandatory) */}

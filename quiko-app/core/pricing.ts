@@ -1,5 +1,3 @@
-import type { TimePreference } from "./types";
-
 // Quiko pricing model (Studio Forge framework):
 //
 //   Final Price = (Distance + Platform Fee + Weight) × Service Multiplier
@@ -72,19 +70,10 @@ export const SERVICE_MULTIPLIERS: Record<ServiceLevel, number> = {
   express: 1.3,
 };
 
-// Until the sender UI exposes the four service levels (PR-2), the existing
-// urgency control maps onto them, preserving price order (cheapest → dearest):
-//   flexible → Flexible · next_day → Standard · same_day → Express
-const TIME_TO_SERVICE: Record<TimePreference, ServiceLevel> = {
-  flexible: "flexible",
-  next_day: "standard",
-  same_day: "express",
-};
-
 export interface PriceInput {
   weightKg: number;
   distanceKm: number;
-  timePreference: TimePreference;
+  serviceLevel: ServiceLevel;
 }
 
 export interface PriceBreakdown {
@@ -99,7 +88,7 @@ export interface PriceBreakdown {
 export function calculatePrice(input: PriceInput): PriceBreakdown {
   const dist = distanceCharge(input.distanceKm);
   const weight = weightCharge(input.weightKg);
-  const multiplier = SERVICE_MULTIPLIERS[TIME_TO_SERVICE[input.timePreference]];
+  const multiplier = SERVICE_MULTIPLIERS[input.serviceLevel];
   const preService = PLATFORM_FEE + dist + weight;
   const maxPrice = preService * multiplier;
 

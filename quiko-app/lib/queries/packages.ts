@@ -16,7 +16,7 @@ export async function createPackage(senderId: string, input: CreatePackageInput)
   const { maxPrice } = calculatePrice({
     weightKg: input.weightKg,
     distanceKm: distance,
-    timePreference: input.timePreference,
+    serviceLevel: input.serviceLevel,
   });
   const offerPrice = Math.min(input.offerPrice, maxPrice);
 
@@ -35,6 +35,7 @@ export async function createPackage(senderId: string, input: CreatePackageInput)
       weightKg: input.weightKg,
       declaredValue: input.declaredValue ?? 0,
       timePreference: input.timePreference,
+      serviceLevel: input.serviceLevel,
       description: input.description,
       receiverName: input.receiverName,
       receiverPhone: input.receiverPhone,
@@ -151,7 +152,7 @@ export async function updatePackage(
   const { maxPrice } = calculatePrice({
     weightKg: input.weightKg,
     distanceKm: distance,
-    timePreference: input.timePreference,
+    serviceLevel: input.serviceLevel,
   });
   const offerPrice = Math.min(input.offerPrice, maxPrice);
 
@@ -169,6 +170,7 @@ export async function updatePackage(
       weightKg: input.weightKg,
       declaredValue: input.declaredValue ?? 0,
       timePreference: input.timePreference,
+      serviceLevel: input.serviceLevel,
       description: input.description,
       receiverName: input.receiverName,
       receiverPhone: input.receiverPhone,
