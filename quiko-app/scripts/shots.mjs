@@ -25,7 +25,7 @@ const shot = (n) => page.screenshot({ path: `${DIR}/ui-${n}.png` });
 
 await page.goto("http://localhost:3000/login");
 await page.getByRole("button", { name: "Send Code" }).click();
-await page.locator('input[inputmode="numeric"]').fill("123456");
+await page.locator('input[inputmode="numeric"]').fill("3456");
 await page.getByRole("button", { name: "Verify & Continue" }).click();
 await page.waitForURL("**/app");
 

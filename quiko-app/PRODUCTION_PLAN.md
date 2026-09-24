@@ -65,7 +65,7 @@ Living plan for building the production app. Product context in `/docs`.
 - Start DB: `npm run db:up` (docker-compose Postgres on :5433) · Stop: `npm run db:down`
 - After schema change: `npm run db:generate && npm run db:migrate`
 - Seed dev travelers: `npm run db:seed`
-- App: `npm run dev` → http://localhost:3000 · Dev login: **any phone + code 123456** (mock OTP)
+- App: `npm run dev` → http://localhost:3000 · Dev login: **any phone + code 3456** (mock OTP)
 - Prod OTP: set `MSG91_AUTH_KEY` / `MSG91_TEMPLATE_ID` in env → MSG91 provider kicks in
 - E2E: `node scripts/e2e-p1.mjs` (Playwright via system Chrome, server must be running)
 
@@ -81,7 +81,7 @@ Living plan for building the production app. Product context in `/docs`.
       · full create→request→accept→match transaction · new routes auth-gated (307→/login)
 
 Note: full browser click-through (server actions need a real session) is a manual step;
-every layer beneath it is validated directly. Dev login **+919999900001 / 123456**,
+every layer beneath it is validated directly. Dev login **+919999900001 / 3456**,
 default package date **2026-07-25** so seeded travelers appear.
 
 ## After P1

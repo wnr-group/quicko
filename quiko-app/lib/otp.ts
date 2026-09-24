@@ -41,10 +41,10 @@ interface OtpProvider {
 
 const mock: OtpProvider = {
   async send(phone) {
-    console.log(`[dev-otp] code for ${phone} = ${process.env.DEV_OTP ?? "123456"}`);
+    console.log(`[dev-otp] code for ${phone} = ${process.env.DEV_OTP ?? "3456"}`);
   },
   async verify(_phone, code) {
-    return code === (process.env.DEV_OTP ?? "123456");
+    return code === (process.env.DEV_OTP ?? "3456");
   },
 };
 

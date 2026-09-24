@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Button, Card, Header } from "@/components/ui";
 import { QuickNav } from "@/components/QuickNav";
-import { api, MatchDetail, MatchStatus, MOCK_OTP, MOCK_PICKUP_OTP } from "@/lib/api";
+import { api, MatchDetail, MatchStatus } from "@/lib/api";
 import { colors, radius } from "@/lib/theme";
 import { inr } from "@core/format";
 import { splitPayment } from "@core/pricing";
@@ -176,7 +176,6 @@ export default function MatchScreen() {
                 return { ok: false as const, error: "error" in r ? r.error : "Incorrect pickup OTP" };
               }, "picked_up")}
             />
-            <Text style={styles.hint}>Mock pickup OTP for demo: {MOCK_PICKUP_OTP}</Text>
           </Card>
         )}
         {!isSender && status === "picked_up" && (
@@ -204,7 +203,6 @@ export default function MatchScreen() {
                 return { ok: false as const, error: "error" in r ? r.error : "Incorrect OTP" };
               }, "delivered")}
             />
-            <Text style={styles.hint}>Mock OTP for demo: {MOCK_OTP}</Text>
           </Card>
         )}
 

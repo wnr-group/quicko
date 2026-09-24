@@ -65,8 +65,8 @@ Open **http://localhost:3000**.
 
 There's no real SMS in dev — OTP is mocked.
 
-- Enter **any Indian phone number**, then the OTP **`123456`**.
-- The code is also printed in the server console: `[dev-otp] code for <phone> = 123456`.
+- Enter **any Indian phone number**, then the OTP **`3456`**.
+- The code is also printed in the server console: `[dev-otp] code for <phone> = 3456`.
 
 ### Seeded accounts
 
@@ -86,7 +86,7 @@ Two seed scripts (both idempotent — safe to re-run):
 | `npm run db:seed` | Minimal — just a few traveller profiles + trips so the "find travellers" list isn't empty. |
 | `npm run db:reset` | Re-applies migrations, then runs `db:seed`. |
 
-`db:fixtures` adds these demo logins (OTP `123456`): **Sam Sender** `918888800001`, **Tara Traveller** `918888800002` (plus the admin/support accounts above). Then follow **[`WALKTHROUGH.md`](./WALKTHROUGH.md)** to tour every flow.
+`db:fixtures` adds these demo logins (OTP `3456`): **Sam Sender** `918888800001`, **Tara Traveller** `918888800002` (plus the admin/support accounts above). Then follow **[`WALKTHROUGH.md`](./WALKTHROUGH.md)** to tour every flow.
 
 > The seeds **upsert** and never delete login profiles — only their own fixture rows — so re-running won't wipe accounts you've created.
 

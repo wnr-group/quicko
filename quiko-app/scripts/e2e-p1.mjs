@@ -28,7 +28,7 @@ try {
   await page.getByRole("link", { name: "Get Started" }).click();
   await page.waitForURL("**/login");
   await page.getByRole("button", { name: "Send Code" }).click();
-  await page.locator('input[inputmode="numeric"]').fill("123456");
+  await page.locator('input[inputmode="numeric"]').fill("3456");
   await page.getByRole("button", { name: "Verify & Continue" }).click();
   await page.waitForURL("**/app");
   log("logged in");

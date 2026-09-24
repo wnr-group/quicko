@@ -170,8 +170,8 @@ export const api = {
 };
 
 // ---- Mock data ------------------------------------------------------------
-export const MOCK_OTP = "4321";
-export const MOCK_PICKUP_OTP = "1234";
+export const MOCK_OTP = "3456";
+export const MOCK_PICKUP_OTP = "3456";
 const MOCK_ME: Me = { id: "mock", fullName: "Sethu Sender", phone: "919000000001", kycLevel: 1 };
 const MOCK_TRIPS: ExploreTrip[] = [
   { id: "t1", travelerName: "Arjun Nair", transport: "flight", travelDate: "2026-08-10", arriveDate: "2026-08-10", departTime: "09:30", arriveTime: "11:00" },

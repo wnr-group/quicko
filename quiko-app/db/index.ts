@@ -17,8 +17,15 @@ const globalForDb = globalThis as unknown as {
   __quikoSql?: ReturnType<typeof postgres>;
 };
 
-const sql = globalForDb.__quikoSql ?? postgres(connectionString, { max: 10 });
-if (process.env.NODE_ENV !== "production") globalForDb.__quikoSql = sql;
+// Serverless (Vercel) talks to Postgres through a transaction-mode pooler
+// (e.g. Supabase PgBouncer on :6543), which does NOT support prepared
+// statements — so disable them, and keep one connection per ephemeral function
+// instance. Locally (long-lived dev server) a larger pool is fine.
+const isProd = process.env.NODE_ENV === "production";
+const sql =
+  globalForDb.__quikoSql ??
+  postgres(connectionString, { max: isProd ? 1 : 10, prepare: false });
+if (!isProd) globalForDb.__quikoSql = sql;
 
 export const db = drizzle(sql, { schema });
 export { schema };

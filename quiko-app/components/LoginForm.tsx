@@ -54,7 +54,7 @@ export function LoginForm({ next }: { next?: string }) {
         </h1>
         <p className="mt-1.5 text-[15px] text-muted">
           {step === "phone"
-            ? "We'll text you a 6-digit code to sign in."
+            ? "We'll text you a one-time code to sign in."
             : `Enter the code sent to ${phone}`}
         </p>
       </div>
@@ -106,9 +106,6 @@ export function LoginForm({ next }: { next?: string }) {
       </div>
 
       <div className="mt-auto pb-8">
-        <p className="rounded-xl bg-brand px-3 py-2.5 text-center text-[13px] font-semibold text-ink">
-          Dev mode — any number works with code <b>123456</b>
-        </p>
         <p className="mt-3 px-4 text-center text-[11px] leading-snug text-muted">
           By continuing, you agree to our{" "}
           <Link href="/terms" className="font-semibold text-ink underline">Terms &amp; Conditions</Link>{" "}
