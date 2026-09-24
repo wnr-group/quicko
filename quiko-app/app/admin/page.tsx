@@ -62,7 +62,7 @@ export default async function AdminDashboard() {
         <Stat label="Deliveries" value={stats.delivered} />
         <Stat label="Pending KYC" value={pendingKyc} />
         {admin && <Stat label="GMV" value={inr(stats.gmv)} />}
-        {admin && <Stat label="Commission (2%)" value={inr(stats.commission)} />}
+        {admin && <Stat label="Commission (10%)" value={inr(stats.commission)} />}
       </div>
 
       {admin && (
