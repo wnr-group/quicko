@@ -8,7 +8,7 @@ import { Card, Label, FieldButton, Segmented, StepBtn, TIME_WINDOWS } from "@/co
 import { IconMapPin, IconFlag, IconPlus, IconMinus, IconArrowLeft, IconHome } from "@/components/icons";
 import { reverseGeocode } from "@/components/geocode";
 import { roadDistanceKm, type PinnedLocation } from "@/core/geo";
-import { DETOUR_RATE, FREE_DETOUR_KM, MAX_EXTRA_DETOUR_KM, detourFee } from "@/core/pricing";
+import { FREE_DETOUR_KM, MAX_EXTRA_DETOUR_KM, detourFee } from "@/core/pricing";
 import { createTripAction } from "@/app/app/actions";
 
 const LocationSheet = dynamic(() => import("@/components/LocationSheet"), { ssr: false });
@@ -221,7 +221,7 @@ export function CreateTripForm({ today }: { today: string }) {
                   <Label>Willing to detour to earn more?</Label>
                   <p className="text-[13px] leading-snug text-muted">
                     A {FREE_DETOUR_KM} km detour is always free. Go further to serve more
-                    senders and earn ₹{DETOUR_RATE}/km extra.
+                    senders and earn a door-service fee that scales with the distance.
                   </p>
                 </div>
                 <button

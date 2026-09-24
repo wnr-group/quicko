@@ -12,6 +12,7 @@ import {
   calculatePrice,
   distanceCharge,
   weightCharge,
+  detourFee,
   PLATFORM_FEE,
   SERVICE_MULTIPLIERS,
   splitPayment,
@@ -48,12 +49,24 @@ near(SERVICE_MULTIPLIERS.standard, 1.0, "multiplier Standard = 1.00");
 near(SERVICE_MULTIPLIERS.fast, 1.1, "multiplier Fast = 1.10");
 near(SERVICE_MULTIPLIERS.express, 1.3, "multiplier Express = 1.30");
 
-// ── Spec §13 FULL target (incl. ₹32 detour) — PR-2 goal, NOT yet engine output ──
-const specPreService = 669.8; // spec's 637.80 + ₹32 proportional detour
-near(Math.round(specPreService * SERVICE_MULTIPLIERS.flexible), 435, "[PR-2 target, incl detour] Flexible ₹435");
-near(Math.round(specPreService * SERVICE_MULTIPLIERS.standard), 670, "[PR-2 target, incl detour] Standard ₹670");
-near(Math.round(specPreService * SERVICE_MULTIPLIERS.fast), 737, "[PR-2 target, incl detour] Fast ₹737");
-near(Math.round(specPreService * SERVICE_MULTIPLIERS.express), 871, "[PR-2 target, incl detour] Express ₹871");
+// ── Detour proportional slab table (spec §12) ──
+near(detourFee(2), 0, "detour(2 km) = ₹0 (free)");
+near(detourFee(4), 32, "detour(4 km) = ₹32 (2–5 band: 40×4/5)");
+near(detourFee(5), 40, "detour(5 km) = ₹40 (band max)");
+near(detourFee(8), 60, "detour(8 km) = ₹60");
+near(detourFee(12), 80, "detour(12 km) = ₹80");
+
+// ── Spec §13 FULL model figure (incl. detour, folded under the multiplier) ──
+// The detour CHARGE now matches the spec (₹32). The app still adds it to a
+// negotiated base without re-multiplying, so these remain the spec-model
+// reference; end-to-end app quotes differ by the multiplier-on-detour (a few ₹)
+// and by any sender negotiation. Kept for traceability.
+const specPreService = distanceCharge(512) + PLATFORM_FEE + weightCharge(3) + detourFee(4);
+near(specPreService, 669.8, "spec pre-service (incl ₹32 detour) = ₹669.80");
+near(Math.round(specPreService * SERVICE_MULTIPLIERS.flexible), 435, "[spec model] Flexible ₹435");
+near(Math.round(specPreService * SERVICE_MULTIPLIERS.standard), 670, "[spec model] Standard ₹670");
+near(Math.round(specPreService * SERVICE_MULTIPLIERS.fast), 737, "[spec model] Fast ₹737");
+near(Math.round(specPreService * SERVICE_MULTIPLIERS.express), 871, "[spec model] Express ₹871");
 
 // ── Commission (spec §8): 10%, ₹500 gross → ₹450 earn / ₹50 commission ──
 const split = splitPayment(500);
