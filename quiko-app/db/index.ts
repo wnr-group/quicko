@@ -24,8 +24,19 @@ const globalForDb = globalThis as unknown as {
 const isProd = process.env.NODE_ENV === "production";
 const sql =
   globalForDb.__quikoSql ??
-  postgres(connectionString, { max: isProd ? 1 : 10, prepare: false });
-if (!isProd) globalForDb.__quikoSql = sql;
+  postgres(connectionString, {
+    max: isProd ? 1 : 10,
+    prepare: false, // transaction pooler (PgBouncer) can't do prepared statements
+    // Supabase's pooler drops idle server-side connections; without these a
+    // reused socket goes stale and the next query hangs until it's cancelled
+    // ("statement timeout"). Recycle idle connections and fail fast instead.
+    idle_timeout: 20, // close a connection after 20s idle → always reconnect fresh
+    max_lifetime: 60 * 30, // hard-recycle every 30 min
+    connect_timeout: 15, // error out in 15s rather than hanging forever
+  });
+// Reuse the single client across warm serverless invocations (and dev HMR); its
+// underlying connections are recycled by idle_timeout above.
+globalForDb.__quikoSql = sql;
 
 export const db = drizzle(sql, { schema });
 export { schema };
