@@ -12,7 +12,7 @@ Living plan for building the production app. Product context in `/docs`.
   - `profiles` is the primary user table (phone = identity); find-or-created on OTP verify.
   - **Storage / Realtime:** not built yet; land at P3/P4 behind `lib/` seams (any provider — S3/R2, WebSocket/Ably).
 - **Payments:** **Razorpay Route escrow** (decided 2026-07-19). Sender pays → held →
-  on delivery OTP auto-split 98% traveler / 2% Quiko. Built in Razorpay **test mode**
+  on delivery OTP auto-split 90% traveler / 10% Quiko. Built in Razorpay **test mode**
   at P3; live keys flip in after business KYC + Route activation. Ledger schema already
   payment-agnostic so nothing blocks earlier phases.
 
