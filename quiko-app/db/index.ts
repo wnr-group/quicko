@@ -21,12 +21,14 @@ const globalForDb = globalThis as unknown as {
 // (e.g. Supabase PgBouncer on :6543), which does NOT support prepared
 // statements — so disable them, and keep one connection per ephemeral function
 // instance. Locally (long-lived dev server) a larger pool is fine.
-const isProd = process.env.NODE_ENV === "production";
 const sql =
   globalForDb.__quikoSql ??
   postgres(connectionString, {
-    max: isProd ? 1 : 10,
-    prepare: false, // transaction pooler (PgBouncer) can't do prepared statements
+    // The transaction pooler (PgBouncer) multiplexes to backends, so a modest
+    // client pool is safe and — unlike max:1 — a single slow/stale connection
+    // no longer blocks every concurrent request on the instance.
+    max: 10,
+    prepare: false, // transaction pooler can't do prepared statements
     // Supabase's pooler drops idle server-side connections; without these a
     // reused socket goes stale and the next query hangs until it's cancelled
     // ("statement timeout"). Recycle idle connections and fail fast instead.
