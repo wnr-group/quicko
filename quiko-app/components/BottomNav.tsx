@@ -13,6 +13,15 @@ export function BottomNav({ matchCount = 0 }: { matchCount?: number }) {
 
   return (
     <nav className="pb-safe sticky bottom-0 z-20 mt-auto flex items-center justify-around border-t border-line bg-canvas/95 px-5 pt-2 backdrop-blur-md">
+      {/* Primary action floats above the tab row rather than sitting in it. */}
+      <Link
+        href="/app/send"
+        aria-label="Send a package"
+        className="absolute bottom-full left-1/2 mb-4 grid h-14 w-14 -translate-x-1/2 place-items-center rounded-full bg-brand text-ink shadow-brand transition-transform active:scale-95 hover:bg-brand-strong"
+      >
+        <IconPlus width={26} height={26} />
+      </Link>
+
       <Tab href="/app" active={isHome} label="Home">
         <IconHome />
       </Tab>
@@ -20,14 +29,6 @@ export function BottomNav({ matchCount = 0 }: { matchCount?: number }) {
       <Tab href="/app/matches" active={isMatches} label="Matches" badge={matchCount}>
         <IconSparkles />
       </Tab>
-
-      <Link
-        href="/app/send"
-        aria-label="Send a package"
-        className="grid h-14 w-14 -translate-y-3 place-items-center rounded-full bg-brand text-ink shadow-brand transition-transform active:scale-95 hover:bg-brand-strong"
-      >
-        <IconPlus width={26} height={26} />
-      </Link>
 
       <Tab href="/app/profile" active={isProfile} label="Profile">
         <IconUser />
