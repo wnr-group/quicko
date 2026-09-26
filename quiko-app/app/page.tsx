@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { IconMapPin, IconPackage } from "@/components/icons";
 
@@ -7,15 +8,14 @@ export default function SplashPage() {
     <PhoneFrame>
       <div className="flex flex-1 flex-col bg-brand px-7 pt-safe">
         <div className="flex flex-1 flex-col items-center justify-center text-center">
-          <div className="grid h-20 w-20 place-items-center rounded-[1.4rem] bg-ink text-4xl font-black text-brand shadow-pop">
-            Q
-          </div>
-          <h1 className="mt-6 text-[2.6rem] font-black leading-none tracking-tight">
-            Quiko
-          </h1>
-          <p className="mt-2.5 text-[13px] font-bold uppercase tracking-[0.22em] text-ink">
-            Just Quick As That
-          </p>
+          <Image
+            src="/quiko-logo.jpg"
+            alt="Quiko — Just Quick As That"
+            width={1600}
+            height={615}
+            priority
+            className="h-auto w-full max-w-[320px]"
+          />
 
           {/* Route visual */}
           <div className="mt-10 flex w-full max-w-[280px] items-center gap-2">

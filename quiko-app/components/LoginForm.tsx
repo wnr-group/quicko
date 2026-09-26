@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
 import { sendOtpAction, verifyOtpAction } from "@/app/login/actions";
@@ -44,9 +45,14 @@ export function LoginForm({ next }: { next?: string }) {
 
   return (
     <div className="flex flex-1 flex-col px-7 pt-safe">
-      <div className="mt-10 grid h-14 w-14 place-items-center rounded-2xl bg-ink text-2xl font-black text-brand">
-        Q
-      </div>
+      <Image
+        src="/quiko-logo.jpg"
+        alt="Quiko — Just Quick As That"
+        width={1600}
+        height={615}
+        priority
+        className="mt-10 h-auto w-full max-w-[230px] rounded-2xl"
+      />
 
       <div className="mt-8">
         <h1 className="text-[26px] font-black tracking-tight">
