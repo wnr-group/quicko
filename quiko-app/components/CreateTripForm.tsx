@@ -197,7 +197,7 @@ export function CreateTripForm({ today }: { today: string }) {
             </Card>
 
             <Card>
-              <Label>Spare capacity</Label>
+              <Label>How much can you carry?</Label>
               <div className="flex items-center justify-between">
                 <StepBtn label="Decrease capacity" onClick={() => setCapacityKg((c) => Math.max(1, c - 1))} disabled={capacityKg <= 1}>
                   <IconMinus />
@@ -211,17 +211,19 @@ export function CreateTripForm({ today }: { today: string }) {
                 </StepBtn>
               </div>
               <p className="mt-2.5 text-[13px] leading-snug text-muted">
-                How much weight you can carry for senders on this trip.
+                Total weight you can carry — shared across all the packages you accept.
               </p>
             </Card>
 
-            <Card>
+            <div className="mt-3 rounded-3xl border-2 border-brand bg-brand-soft p-4 shadow-brand">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
-                  <Label>Willing to detour to earn more?</Label>
-                  <p className="text-[13px] leading-snug text-muted">
-                    A {FREE_DETOUR_KM} km detour is always free. Go further to serve more
-                    senders and earn a door-service fee that scales with the distance.
+                  <p className="text-[16px] font-extrabold leading-tight text-ink">
+                    💸 Travel an extra mile to earn more
+                  </p>
+                  <p className="mt-1 text-[13px] leading-snug text-ink-soft">
+                    A {FREE_DETOUR_KM} km detour is always free. Go a little further to
+                    serve more senders and earn extra — the fee grows with the distance.
                   </p>
                 </div>
                 <button
@@ -230,13 +232,13 @@ export function CreateTripForm({ today }: { today: string }) {
                   aria-checked={detourOn}
                   aria-label="Willing to detour to earn more"
                   onClick={() => setDetourOn((v) => !v)}
-                  className={`relative mt-0.5 h-7 w-12 shrink-0 rounded-full transition-colors active:scale-95 ${
-                    detourOn ? "bg-brand shadow-brand" : "bg-surface0"
+                  className={`relative mt-0.5 h-8 w-14 shrink-0 rounded-full border transition-colors active:scale-95 ${
+                    detourOn ? "border-ink bg-ink shadow-ink" : "border-ink/25 bg-white"
                   }`}
                 >
                   <span
-                    className={`absolute top-0.5 h-6 w-6 rounded-full shadow-md transition-all ${
-                      detourOn ? "left-[22px] bg-ink" : "left-0.5 bg-white"
+                    className={`absolute top-1 h-6 w-6 rounded-full shadow-md transition-all ${
+                      detourOn ? "left-[26px] bg-brand" : "left-1 bg-ink/30"
                     }`}
                   />
                 </button>
@@ -259,7 +261,7 @@ export function CreateTripForm({ today }: { today: string }) {
                     step={1}
                     value={totalDetourKm}
                     onChange={(e) => setExtraDetourKm(Number(e.target.value) - FREE_DETOUR_KM)}
-                    className="w-full accent-brand"
+                    className="w-full accent-ink"
                     aria-label="Total detour kilometres"
                   />
                   <div className="flex justify-between text-[11px] font-medium text-muted">
@@ -272,7 +274,7 @@ export function CreateTripForm({ today }: { today: string }) {
                   </p>
                 </div>
               )}
-            </Card>
+            </div>
           </>
         )}
 

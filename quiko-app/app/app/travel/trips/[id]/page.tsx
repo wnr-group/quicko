@@ -239,7 +239,7 @@ function Capacity({ spare, total }: { spare: number; total: number }) {
   return (
     <div className="mt-4 rounded-2xl bg-surface p-3.5">
       <div className="flex items-baseline gap-2">
-        <span className="text-[12px] font-bold uppercase tracking-wide text-muted">Capacity</span>
+        <span className="text-[12px] font-bold uppercase tracking-wide text-muted">Space left</span>
         <span className="ml-auto text-[13px] font-bold">
           {spare} kg free
           <span className="font-semibold text-muted"> of {total} kg</span>
