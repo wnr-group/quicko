@@ -31,8 +31,7 @@ export function ExploreDetailsForm({
     () => calculatePrice({ weightKg, distanceKm: distance, serviceLevel }),
     [weightKg, distance, serviceLevel],
   );
-  const descOk = description.trim().length >= 3;
-  const ready = distance > 0 && descOk;
+  const ready = distance > 0;
 
   const dateLabel =
     params.dateTo && params.dateTo !== params.dateFrom
@@ -49,7 +48,7 @@ export function ExploreDetailsForm({
           travelDate: params.dateFrom, dateTo: params.dateTo,
           weightKg, timePreference: params.timePreference, serviceLevel,
           offerPrice: breakdown.maxPrice,
-          description: description.trim(),
+          description: description.trim() || undefined,
         },
         tripId,
       );
@@ -113,9 +112,9 @@ export function ExploreDetailsForm({
           </p>
         </Card>
 
-        {/* Description (mandatory) */}
+        {/* Description (optional) */}
         <Card>
-          <Label>Description</Label>
+          <Label>Description (optional)</Label>
           <textarea value={description} onChange={(e) => setDescription(e.target.value)}
             placeholder="e.g. Documents and a small gift for family" rows={3} maxLength={300}
             className="w-full resize-none rounded-xl border border-line bg-white px-3.5 py-3 text-[15px] outline-none focus:border-ink" />
@@ -128,11 +127,9 @@ export function ExploreDetailsForm({
         <Button variant="brand" onClick={submit} disabled={!ready || pending}>
           {pending
             ? "Posting…"
-            : !descOk
-              ? "Describe your package"
-              : notify
-                ? "Post & get notified"
-                : `Send request to ${travelerName ?? "traveler"}`}
+            : notify
+              ? "Post & get notified"
+              : `Send request to ${travelerName ?? "traveler"}`}
         </Button>
       </div>
     </div>

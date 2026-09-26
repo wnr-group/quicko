@@ -107,8 +107,7 @@ export function CreatePackageForm({
     () => calculatePrice({ weightKg, distanceKm: distance, serviceLevel }),
     [weightKg, distance, serviceLevel],
   );
-  const descOk = description.trim().length >= 3;
-  const ready = !!from && !!to && distance > 0 && dateOk && descOk;
+  const ready = !!from && !!to && distance > 0 && dateOk;
 
   function submit() {
     if (!from || !to) return;
@@ -119,7 +118,7 @@ export function CreatePackageForm({
         toLabel: to.label, toLat: to.lat, toLng: to.lng,
         travelDate, dateTo, weightKg, timePreference, serviceLevel,
         offerPrice: breakdown.maxPrice,
-        description: description.trim(),
+        description: description.trim() || undefined,
         receiverName: receiverName.trim() || undefined,
         receiverPhone: receiverPhone.trim() || undefined,
       };
@@ -177,9 +176,9 @@ export function CreatePackageForm({
           </div>
         </Card>
 
-        {/* Description (mandatory) */}
+        {/* Description (optional) */}
         <Card>
-          <Label>Description</Label>
+          <Label>Description (optional)</Label>
           <textarea value={description} onChange={(e) => setDescription(e.target.value)}
             placeholder="e.g. Documents and a small gift for family" rows={3} maxLength={300}
             className="w-full resize-none rounded-xl border border-line bg-white px-3.5 py-3 text-[15px] outline-none focus:border-ink" />
@@ -236,11 +235,9 @@ export function CreatePackageForm({
               ? "Set pickup & destination"
               : !dateOk
                 ? "Pick a valid date range"
-                : !descOk
-                  ? "Describe your package"
-                  : isEdit
-                    ? "Save changes"
-                    : "Post & Find Travelers"}
+                : isEdit
+                  ? "Save changes"
+                  : "Post & Find Travelers"}
         </Button>
       </div>
 
