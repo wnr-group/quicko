@@ -36,44 +36,44 @@ export async function getPlatformStats() {
 
 /** Operational KPIs + route supply/demand for the dashboard. */
 export async function getOpsMetrics() {
-  const [pkgCounts] = await db
-    .select({
-      total: sql<number>`count(*)::int`,
-      matched: sql<number>`count(*) filter (where ${packages.status} <> 'active')::int`,
-    })
-    .from(packages);
-
-  const [mc] = await db
-    .select({
-      total: sql<number>`count(*)::int`,
-      delivered: sql<number>`count(*) filter (where ${matches.status} in ('delivered','completed'))::int`,
-      cancelled: sql<number>`count(*) filter (where ${matches.status} = 'cancelled')::int`,
-      disputed: sql<number>`count(*) filter (where ${matches.status} = 'disputed')::int`,
-    })
-    .from(matches);
-
-  const [ttm] = await db
-    .select({
-      avgHours: sql<number>`coalesce(avg(extract(epoch from (${matches.createdAt} - ${packages.createdAt})) / 3600), 0)`,
-    })
-    .from(matches)
-    .innerJoin(packages, eq(matches.packageId, packages.id));
-
-  const demand = await db
-    .select({ route: sql<string>`${packages.fromCity} || ' → ' || ${packages.toCity}`, n: sql<number>`count(*)::int` })
-    .from(packages)
-    .where(eq(packages.status, "active"))
-    .groupBy(packages.fromCity, packages.toCity)
-    .orderBy(sql`count(*) desc`)
-    .limit(6);
-
-  const supply = await db
-    .select({ route: sql<string>`${trips.fromCity} || ' → ' || ${trips.toCity}`, n: sql<number>`count(*)::int` })
-    .from(trips)
-    .where(eq(trips.status, "active"))
-    .groupBy(trips.fromCity, trips.toCity)
-    .orderBy(sql`count(*) desc`)
-    .limit(6);
+  // Run all five independent aggregates in one parallel batch rather than five
+  // sequential round-trips — far fewer sequential hops for the heaviest page.
+  const [[pkgCounts], [mc], [ttm], demand, supply] = await Promise.all([
+    db
+      .select({
+        total: sql<number>`count(*)::int`,
+        matched: sql<number>`count(*) filter (where ${packages.status} <> 'active')::int`,
+      })
+      .from(packages),
+    db
+      .select({
+        total: sql<number>`count(*)::int`,
+        delivered: sql<number>`count(*) filter (where ${matches.status} in ('delivered','completed'))::int`,
+        cancelled: sql<number>`count(*) filter (where ${matches.status} = 'cancelled')::int`,
+        disputed: sql<number>`count(*) filter (where ${matches.status} = 'disputed')::int`,
+      })
+      .from(matches),
+    db
+      .select({
+        avgHours: sql<number>`coalesce(avg(extract(epoch from (${matches.createdAt} - ${packages.createdAt})) / 3600), 0)`,
+      })
+      .from(matches)
+      .innerJoin(packages, eq(matches.packageId, packages.id)),
+    db
+      .select({ route: sql<string>`${packages.fromCity} || ' → ' || ${packages.toCity}`, n: sql<number>`count(*)::int` })
+      .from(packages)
+      .where(eq(packages.status, "active"))
+      .groupBy(packages.fromCity, packages.toCity)
+      .orderBy(sql`count(*) desc`)
+      .limit(6),
+    db
+      .select({ route: sql<string>`${trips.fromCity} || ' → ' || ${trips.toCity}`, n: sql<number>`count(*)::int` })
+      .from(trips)
+      .where(eq(trips.status, "active"))
+      .groupBy(trips.fromCity, trips.toCity)
+      .orderBy(sql`count(*) desc`)
+      .limit(6),
+  ]);
 
   const pct = (num: number, den: number) => (den ? Math.round((num / den) * 100) : 0);
   return {
