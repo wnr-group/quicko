@@ -13,6 +13,10 @@ import type { TimePreference } from "@/core/types";
 
 const LocationSheet = dynamic(() => import("@/components/LocationSheet"), { ssr: false });
 
+// Persist the route/timing across the send flow so returning to this step
+// (back from Explore) restores what the user already picked.
+const STORE_KEY = "quiko_send_step1";
+
 export function SendStep1({
   today, tomorrow, weekOut,
 }: {
@@ -27,6 +31,28 @@ export function SendStep1({
   const [flexTo, setFlexTo] = useState("");
 
   useEffect(() => {
+    // Restore a previous selection (e.g. after tapping back from Explore) so the
+    // pickup/destination and timing the user already chose aren't lost.
+    try {
+      const raw = sessionStorage.getItem(STORE_KEY);
+      if (raw) {
+        const s = JSON.parse(raw) as Partial<{
+          from: PinnedLocation; to: PinnedLocation;
+          timePreference: TimePreference; flexFrom: string; flexTo: string;
+        }>;
+        // Restoring client-only state after hydration: an effect is correct here
+        // (a lazy useState initializer would mismatch the server render).
+        /* eslint-disable react-hooks/set-state-in-effect */
+        if (s.from) setFrom(s.from);
+        if (s.to) setTo(s.to);
+        if (s.timePreference) setTimePreference(s.timePreference);
+        if (s.flexFrom) setFlexFrom(s.flexFrom);
+        if (s.flexTo) setFlexTo(s.flexTo);
+        /* eslint-enable react-hooks/set-state-in-effect */
+        if (s.from) return; // had a pickup already → don't override with geolocation
+      }
+    } catch {}
+
     if (from || !("geolocation" in navigator)) return;
     let cancelled = false;
     navigator.geolocation.getCurrentPosition(
@@ -54,6 +80,9 @@ export function SendStep1({
 
   function explore() {
     if (!from || !to) return;
+    try {
+      sessionStorage.setItem(STORE_KEY, JSON.stringify({ from, to, timePreference, flexFrom, flexTo }));
+    } catch {}
     const q = toSendQuery({ from, to, timePreference, dateFrom, dateTo });
     router.push(`/app/send/explore?${q}`);
   }
