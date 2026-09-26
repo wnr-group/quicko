@@ -63,6 +63,8 @@ Notes:
 **Optional — leave UNSET for the demo** (each has a mock/free default):
 `CASHFREE_*` (payments → simulated), `MSG91_*` (OTP → mock), `NEXT_PUBLIC_MAPTILER_KEY`
 (maps → free OSM), `APP_URL` (only affects notification link hosts).
+`DB_QUERY_TIMEOUT_MS` (per-query deadline in ms; defaults to 8000, `0` disables —
+see §8).
 
 The full template is `quiko-app/.env.example`.
 
@@ -203,11 +205,56 @@ This also closed a **data leak**: the pre-fix `/admin` response contained live
 platform counts (open disputes / reports / support threads) for logged-out
 requests, even though the flight also carried a redirect.
 
+### 8b. Second round — the signed-in admin could still hang
+
+The gate fix removed the load amplification but **not** the stale-connection
+hang, and the console still stalled for a signed-in admin. Measured directly
+against the production database:
+
+- The DB is **healthy and fast** — the whole 15-query dashboard fan-out runs in
+  **409 ms** from a laptop in another region (it is far quicker from `bom1`).
+  `statement_timeout` is a normal `2min`; connections sat at 11 of 60.
+- But `pg_stat_activity` showed a backend stuck **500+ seconds in
+  `Client/ClientRead`** running the dashboard's `countPendingKyc` query: the
+  server was waiting on a client that had vanished mid-protocol — i.e. a Vercel
+  Lambda frozen or killed in the middle of the query, leaving the backend
+  wedged and holding a pooler slot.
+- A `select 1` on the transaction pooler once failed with
+  `57014 canceling statement due to statement timeout` **after only 310 ms**,
+  far under the 2min timeout — a stale cancellation delivered from a pooled
+  backend that a previous client had already wedged.
+
+So the DB is fine; the **connection lifecycle** is the problem. The fatal part
+is that RSC responses **stream**: the 200 and the page shell are already on the
+wire, so a query that never settles cannot become an error — it is simply a page
+that loads forever.
+
+**Fix applied:** `db/index.ts` now wraps the postgres-js client in a proxy that
+gives every query a deadline (`DB_QUERY_TIMEOUT_MS`, default 8000 ms; `0`
+disables) and calls `.cancel()` on a blown deadline so the server does not keep
+a wedged backend. drizzle's driver only calls `unsafe`, `begin` and `savepoint`,
+and the transaction callback gets a guarded client too, so queries inside a
+`db.transaction()` are covered.
+
+A blown deadline now **throws**, which React can render: `app/error.tsx`
+(root — a segment's own `error.tsx` does *not* wrap the layout above it in the
+same segment, and the gates run in layouts) plus `app/admin/error.tsx` and
+`app/support/error.tsx`, each with a "Try again" that calls Next 16's
+`unstable_retry()` (not `reset()` — `reset` re-renders without re-fetching).
+A retry lands on a fresh invocation with a fresh socket and normally succeeds.
+
+Verified locally: with `DB_QUERY_TIMEOUT_MS=1` an RSC navigation to `/admin`
+returns a **complete, closed** stream in 9 ms carrying React's error rows,
+instead of hanging; at the default timeout every page, and the
+`db.transaction()` paths (commit, early-return and the nested auto-flag write),
+behave exactly as before.
+
 **Still worth knowing.** Supabase's pooler drops idle server-side connections
 while Vercel freezes the function between requests, so a reused socket can still
-go stale. The existing mitigations stay in `db/index.ts` (`prepare:false`,
+go stale — the deadline turns that into a fast, retryable error rather than
+preventing it. The existing mitigations stay in `db/index.ts` (`prepare:false`,
 `idle_timeout`, `max_lifetime`, `connect_timeout`, `max:10`, region pinned to
-`bom1`). If hangs ever return **with the query volume now this low**, migrating
+`bom1`). To remove the class of problem rather than survive it, migrating
 the demo DB to [Neon](https://neon.tech) — whose serverless driver uses
 HTTP/WebSocket, so there are no persistent connections to go stale — remains the
 structural fix:
