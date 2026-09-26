@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { PhoneFrame } from "@/components/PhoneFrame";
-import { SignOutButton } from "@/components/SignOutButton";
 import { NotificationBell } from "@/components/NotificationBell";
 import { BottomNav } from "@/components/BottomNav";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -37,7 +36,6 @@ export default async function AppHome() {
           </div>
           <div className="flex items-center gap-2">
             <NotificationBell profileId={user.id} />
-            <SignOutButton />
           </div>
         </div>
       </header>
