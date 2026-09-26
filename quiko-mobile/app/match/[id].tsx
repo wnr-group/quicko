@@ -163,13 +163,13 @@ export default function MatchScreen() {
               Payment secured 🔒 — collect it from {m.fromCity}, then enter the pickup OTP {m.counterpartName} gives you.
             </Text>
             <TextInput
-              value={pickupOtp} onChangeText={(t) => setPickupOtp(t.replace(/\D/g, "").slice(0, 4))}
+              value={pickupOtp} onChangeText={(t) => setPickupOtp(t.replace(/\D/g, "").slice(0, 6))}
               keyboardType="number-pad" placeholder="Pickup OTP"
               style={[styles.input, styles.otpInput]}
             />
             <View style={{ height: 8 }} />
             <Button
-              title="Confirm pickup" loading={busy} disabled={pickupOtp.length < 4}
+              title="Confirm pickup" loading={busy} disabled={pickupOtp.length < 6}
               onPress={() => act(async () => {
                 const r = await api.advanceMatch(m.id, "picked_up", pickupOtp);
                 if (r.ok) return r;
@@ -190,13 +190,13 @@ export default function MatchScreen() {
             <Text style={styles.cardH}>Confirm delivery</Text>
             <Text style={styles.muted}>Enter the OTP the receiver gives you.</Text>
             <TextInput
-              value={otp} onChangeText={(t) => setOtp(t.replace(/\D/g, "").slice(0, 4))}
+              value={otp} onChangeText={(t) => setOtp(t.replace(/\D/g, "").slice(0, 6))}
               keyboardType="number-pad" placeholder="Delivery OTP"
               style={[styles.input, styles.otpInput]}
             />
             <View style={{ height: 8 }} />
             <Button
-              title="Confirm delivery" loading={busy} disabled={otp.length < 4}
+              title="Confirm delivery" loading={busy} disabled={otp.length < 6}
               onPress={() => act(async () => {
                 const r = await api.confirmDelivery(m.id, otp);
                 if (r.ok) return r;

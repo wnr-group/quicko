@@ -87,11 +87,11 @@ export function TravelerMatchFlow({
             <Receiver name={receiverName} phone={receiverPhone} />
             <Info tone="wait">Collect the package, then enter the pickup OTP {senderName} gives you.</Info>
             <input inputMode="numeric" value={pickupOtp}
-              onChange={(e) => setPickupOtp(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              onChange={(e) => setPickupOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
               placeholder="Pickup OTP"
               className="mt-2 w-full rounded-xl border border-line px-4 py-3 text-center text-2xl font-bold tracking-[0.4em] outline-none focus:border-ink" />
             <PhotoCapture label="Add pickup photo (recommended)" value={pickupPhoto} onCapture={setPickupPhoto} />
-            <Btn disabled={pending || pickupOtp.length < 4}
+            <Btn disabled={pending || pickupOtp.length < 6}
               onClick={() => run(() => advanceMatchAction(matchId, tripId, packageId, "picked_up", pickupPhoto ?? undefined, pickupOtp))}>
               {pending ? "…" : "Confirm pickup"}
             </Btn>
@@ -112,11 +112,11 @@ export function TravelerMatchFlow({
             <Info tone="go">Hand over to the receiver, then enter the OTP they give you.</Info>
             <Receiver name={receiverName} phone={receiverPhone} />
             <input inputMode="numeric" value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
               placeholder="Delivery OTP"
               className="mt-2 w-full rounded-xl border border-line px-4 py-3 text-center text-2xl font-bold tracking-[0.4em] outline-none focus:border-ink" />
             <PhotoCapture label="Add delivery photo (optional)" value={deliveryPhoto} onCapture={setDeliveryPhoto} />
-            <Btn disabled={pending || otp.length < 4}
+            <Btn disabled={pending || otp.length < 6}
               onClick={() => run(() => confirmDeliveryAction(matchId, tripId, packageId, otp, deliveryPhoto ?? undefined))}>
               {pending ? "Confirming…" : "Confirm delivery"}
             </Btn>

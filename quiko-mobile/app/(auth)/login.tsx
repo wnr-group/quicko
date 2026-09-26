@@ -86,7 +86,7 @@ export default function Login() {
             <Button title="Send Code" onPress={sendCode} loading={loading} disabled={phone.length < 8} />
           ) : (
             <>
-              <Button title="Verify & Continue" onPress={verify} loading={loading} disabled={code.length < 4} />
+              <Button title="Verify & Continue" onPress={verify} loading={loading} disabled={code.length < 6} />
               <Text onPress={() => setStep("phone")} style={styles.link}>
                 ← Change number
               </Text>
