@@ -4,11 +4,14 @@ import { countPendingKyc } from "@/lib/queries/kyc";
 import { countOpenSupport } from "@/lib/queries/support";
 import { countOpenDisputes } from "@/lib/queries/disputes";
 import { countOpenReports } from "@/lib/queries/reports";
-import { getProfile, isAdminProfile } from "@/lib/auth";
+import { requireSupport, isAdminProfile } from "@/lib/auth";
 import { inr } from "@/core/format";
 
 export default async function AdminDashboard() {
-  const admin = isAdminProfile(await getProfile());
+  // Gate BEFORE any query: the layout's gate cannot protect this page.
+  // Next renders layout and page concurrently, so a layout redirect does not
+  // stop the page body from running its queries (and leaking their results).
+  const admin = isAdminProfile(await requireSupport());
   const [stats, pendingKyc, openSupport, openDisputes, openReports, unmatched, metrics] = await Promise.all([
     getPlatformStats(),
     countPendingKyc(),

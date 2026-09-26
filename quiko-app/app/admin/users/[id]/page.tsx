@@ -1,17 +1,20 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAdminUser } from "@/lib/queries/admin";
-import { getProfile, isAdminProfile } from "@/lib/auth";
+import { requireSupport, isAdminProfile } from "@/lib/auth";
 import { AdminUserActions } from "@/components/AdminUserActions";
 import { StatusBadge } from "@/components/StatusBadge";
 import { inr, formatPhone, initials, timeAgo, dateShort } from "@/core/format";
 
 export default async function AdminUserPage({ params }: { params: Promise<{ id: string }> }) {
+  // Gate BEFORE any query: the layout's gate cannot protect this page.
+  // Next renders layout and page concurrently, so a layout redirect does not
+  // stop the page body from running its queries (and leaking their results).
+  const admin = isAdminProfile(await requireSupport());
   const { id } = await params;
   const data = await getAdminUser(id);
   if (!data) notFound();
   const { profile, packages, trips, matches } = data;
-  const admin = isAdminProfile(await getProfile());
 
   return (
     <>

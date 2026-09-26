@@ -1,10 +1,15 @@
 import Link from "next/link";
 import { adminSearch } from "@/lib/queries/admin";
+import { requireSupport } from "@/lib/auth";
 import { StatusBadge } from "@/components/StatusBadge";
 import { AdminHeading, FilterBar } from "@/components/adminkit";
 import { formatPhone } from "@/core/format";
 
 export default async function AdminSearch({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  // Gate BEFORE any query: the layout's gate cannot protect this page.
+  // Next renders layout and page concurrently, so a layout redirect does not
+  // stop the page body from running its queries (and leaking their results).
+  await requireSupport();
   const { q = "" } = await searchParams;
   const res = q.trim() ? await adminSearch(q) : null;
 

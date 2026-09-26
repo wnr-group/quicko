@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { disputes, matches, packages, profiles } from "@/db/schema";
 import { notify } from "@/lib/queries/notifications";
@@ -165,6 +165,9 @@ export async function getOpenDisputeForMatch(matchId: string) {
 }
 
 export async function countOpenDisputes(): Promise<number> {
-  const rows = await db.select({ id: disputes.id }).from(disputes).where(eq(disputes.status, "open"));
-  return rows.length;
+  const [row] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(disputes)
+    .where(eq(disputes.status, "open"));
+  return row?.n ?? 0;
 }

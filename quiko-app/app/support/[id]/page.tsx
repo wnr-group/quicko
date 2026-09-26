@@ -1,10 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSupportThread } from "@/lib/queries/support";
+import { requireSupport } from "@/lib/auth";
 import { SupportReply } from "@/components/SupportReply";
 import { formatPhone, initials, timeAgo } from "@/core/format";
 
 export default async function SupportThreadPage({ params }: { params: Promise<{ id: string }> }) {
+  // Gate BEFORE any query: the layout's gate cannot protect this page.
+  // Next renders layout and page concurrently, so a layout redirect does not
+  // stop the page body from running its queries (and leaking their results).
+  await requireSupport();
   const { id } = await params;
   const data = await getSupportThread(id);
   if (!data) notFound();

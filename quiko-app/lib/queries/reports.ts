@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import { reports, profiles, matches, packages } from "@/db/schema";
@@ -69,8 +69,11 @@ export async function listOpenReports() {
 }
 
 export async function countOpenReports(): Promise<number> {
-  const rows = await db.select({ id: reports.id }).from(reports).where(eq(reports.status, "open"));
-  return rows.length;
+  const [row] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(reports)
+    .where(eq(reports.status, "open"));
+  return row?.n ?? 0;
 }
 
 /** Ops resolves a report: warn the user, suspend them, or dismiss the report. */

@@ -86,14 +86,14 @@ export default async function ProfilePage() {
         </Link>
 
         {isSupportProfile(profile) && (
-          <Link href="/support" className="mt-3 flex items-center justify-center gap-1.5 rounded-3xl bg-canvas p-4 text-[15px] font-semibold text-ink shadow-card active:scale-[0.99]">
+          <Link href="/support" prefetch={false} className="mt-3 flex items-center justify-center gap-1.5 rounded-3xl bg-canvas p-4 text-[15px] font-semibold text-ink shadow-card active:scale-[0.99]">
             Open support console
             <IconChevronRight width={18} height={18} />
           </Link>
         )}
 
         {isSupportProfile(profile) && (
-          <Link href="/admin" className="mt-3 flex items-center justify-center gap-1.5 rounded-3xl bg-ink p-4 text-[15px] font-semibold text-brand shadow-ink active:scale-[0.99]">
+          <Link href="/admin" prefetch={false} className="mt-3 flex items-center justify-center gap-1.5 rounded-3xl bg-ink p-4 text-[15px] font-semibold text-brand shadow-ink active:scale-[0.99]">
             {isAdminProfile(profile) ? "Open admin panel" : "Open ops console"}
             <IconChevronRight width={18} height={18} />
           </Link>

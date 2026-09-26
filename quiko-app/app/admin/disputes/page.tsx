@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { listOpenDisputes } from "@/lib/queries/disputes";
+import { requireSupport } from "@/lib/auth";
 import { Empty } from "@/components/adminkit";
 import { inr, initials, timeAgo } from "@/core/format";
 
@@ -8,6 +9,10 @@ const REASON_LABELS: Record<string, string> = {
 };
 
 export default async function AdminDisputesPage() {
+  // Gate BEFORE any query: the layout's gate cannot protect this page.
+  // Next renders layout and page concurrently, so a layout redirect does not
+  // stop the page body from running its queries (and leaking their results).
+  await requireSupport();
   const items = await listOpenDisputes();
 
   return (

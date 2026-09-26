@@ -219,8 +219,13 @@ export async function listUnmatchedPackages() {
 }
 
 export async function countUnmatchedPackages(): Promise<number> {
-  const rows = await db.select({ id: packages.id }).from(packages).where(eq(packages.status, "active"));
-  return rows.length;
+  // Count in SQL: pulling every active package id back just to read .length
+  // grows the payload with the table for a number the page renders as a badge.
+  const [row] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(packages)
+    .where(eq(packages.status, "active"));
+  return row?.n ?? 0;
 }
 
 /** One unmatched package + active trips ranked by how little detour they'd add. */

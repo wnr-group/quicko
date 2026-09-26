@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAdminMatch } from "@/lib/queries/admin";
 import { getOpenDisputeForMatch } from "@/lib/queries/disputes";
-import { getProfile, isAdminProfile } from "@/lib/auth";
+import { requireSupport, isAdminProfile } from "@/lib/auth";
 import { AdminMatchActions } from "@/components/AdminMatchActions";
 import { inr, formatPhone, timeAgo, initials } from "@/core/format";
 
@@ -13,12 +13,15 @@ const REASON_LABELS: Record<string, string> = {
 const TIMELINE = ["confirmed", "paid", "picked_up", "in_transit", "delivered", "completed"];
 
 export default async function AdminMatchPage({ params }: { params: Promise<{ id: string }> }) {
+  // Gate BEFORE any query: the layout's gate cannot protect this page.
+  // Next renders layout and page concurrently, so a layout redirect does not
+  // stop the page body from running its queries (and leaking their results).
+  const admin = isAdminProfile(await requireSupport());
   const { id } = await params;
   const m = await getAdminMatch(id);
   if (!m) notFound();
   const { match, pkg, sender, traveler, transactions, messages, eventTimes } = m;
   const dispute = match.status === "disputed" ? await getOpenDisputeForMatch(id) : null;
-  const admin = isAdminProfile(await getProfile());
   const reached = TIMELINE.indexOf(match.status);
   const stageTime = (s: string) =>
     eventTimes[s]

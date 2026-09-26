@@ -1,11 +1,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAdminTrip } from "@/lib/queries/admin";
+import { requireSupport } from "@/lib/auth";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Panel, KV } from "@/components/adminkit";
 import { inr, formatPhone, dateShort, timeWindow, timeAgo } from "@/core/format";
 
 export default async function AdminTripPage({ params }: { params: Promise<{ id: string }> }) {
+  // Gate BEFORE any query: the layout's gate cannot protect this page.
+  // Next renders layout and page concurrently, so a layout redirect does not
+  // stop the page body from running its queries (and leaking their results).
+  await requireSupport();
   const { id } = await params;
   const data = await getAdminTrip(id);
   if (!data) notFound();

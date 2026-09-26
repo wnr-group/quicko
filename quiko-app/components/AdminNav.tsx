@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 
 type Item = { href: string; label: string };
@@ -37,6 +38,7 @@ export function AdminNav({
   orientation: "sidebar" | "strip";
 }) {
   const path = usePathname();
+  const [hovered, setHovered] = useState<string | null>(null);
 
   const isActive = (href: string) =>
     href === "/admin" ? path === "/admin" : path.startsWith(href);
@@ -47,6 +49,11 @@ export function AdminNav({
       <Link
         key={it.href}
         href={it.href}
+        // Every nav item is visible at once; default prefetching would render
+        // all of them (each one a DB-heavy console page) up front. Wait for
+        // hover intent instead.
+        prefetch={hovered === it.href ? null : false}
+        onMouseEnter={() => setHovered(it.href)}
         aria-current={active ? "page" : undefined}
         className={
           orientation === "sidebar"

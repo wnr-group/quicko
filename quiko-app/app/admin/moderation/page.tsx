@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { listOpenReports } from "@/lib/queries/reports";
-import { getProfile, isAdminProfile } from "@/lib/auth";
+import { requireSupport, isAdminProfile } from "@/lib/auth";
 import { ModerationActions } from "@/components/ModerationActions";
 import { Empty } from "@/components/adminkit";
 import { initials, timeAgo } from "@/core/format";
@@ -10,7 +10,10 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 export default async function AdminModerationPage() {
-  const admin = isAdminProfile(await getProfile());
+  // Gate BEFORE any query: the layout's gate cannot protect this page.
+  // Next renders layout and page concurrently, so a layout redirect does not
+  // stop the page body from running its queries (and leaking their results).
+  const admin = isAdminProfile(await requireSupport());
   const items = await listOpenReports();
 
   return (

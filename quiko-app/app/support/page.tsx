@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { listSupportThreads } from "@/lib/queries/support";
+import { requireSupport } from "@/lib/auth";
 import { formatPhone, initials, timeAgo } from "@/core/format";
 
 export default async function SupportQueue({
@@ -7,6 +8,10 @@ export default async function SupportQueue({
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
+  // Gate BEFORE any query: the layout's gate cannot protect this page.
+  // Next renders layout and page concurrently, so a layout redirect does not
+  // stop the page body from running its queries (and leaking their results).
+  await requireSupport();
   const { status } = await searchParams;
   const tab = status === "closed" ? "closed" : "open";
   const threads = await listSupportThreads(tab);

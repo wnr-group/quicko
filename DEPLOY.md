@@ -146,30 +146,73 @@ npm run db:fixtures    # OPTIONAL: seeds demo users + sample data (see §6)
 
 ---
 
-## 8. KNOWN ISSUE — intermittent hangs on Supabase + Vercel serverless
+## 8. FIXED — the admin console used to hang on navigation
 
-**Symptom:** pages that run several DB queries — most visibly the **admin
-console** (`/admin`, ~15 queries) — sometimes hang. The RSC navigation fetch
-(`admin?_rsc=…`) returns **200 but stays Pending forever**, so the page never
-opens. Login has also intermittently "stuck."
+**Symptom (now fixed):** clicking "Open admin panel" did nothing. The RSC
+navigation fetch (`admin?_rsc=…`) returned **200 but stayed Pending forever**,
+so the router never committed and the button looked dead. `/support` behaved the
+same way; `/app` never did.
 
-**Root cause:** Supabase's connection pooler drops idle server-side connections,
-and Vercel **freezes** the serverless function (and its connection-cleanup
-timers) between requests. On thaw, the app reuses a now-dead socket and the query
-hangs until it's cancelled. This is a structural mismatch between a
-persistent-connection pooler and frozen serverless functions — **not** a data,
-schema, gate, or latency problem (verified: DB healthy, admin `staff_role`
-correct, functions already colocated in `bom1`).
+**Actual root cause — the auth gate lived in the layout.** `app/admin/layout.tsx`
+and `app/support/layout.tsx` called `requireSupport()`, which `redirect()`s. But
+Next renders a **layout and its page concurrently**, so a layout redirect does
+*not* stop the page body from running. Every request to `/admin` therefore
+executed the dashboard's full query fan-out — **15 statements, verified against
+`log_statement=all`** — even when the visitor was logged out or not staff, and
+even for a router *prefetch*. The redirect is emitted as a late row in the flight
+stream (`4:E{"digest":"NEXT_REDIRECT;…"}`), *after* the page body resolves, so
+whenever those queries stalled the client never received the redirect at all.
 
-**Mitigations already applied** (reduce, don't eliminate): `prepare:false`,
-`idle_timeout`/`max_lifetime`/`connect_timeout`, `max:10`, region pin to `bom1`,
-and parallelized admin queries.
+Next's own docs say the same thing — see
+`node_modules/next/dist/docs/01-app/02-guides/authentication.md`: be cautious
+doing checks in layouts; do the auth check in the page/DAL.
 
-**Recommended real fix: migrate the demo DB to [Neon](https://neon.tech).** Neon's
-serverless driver talks over HTTP/WebSocket — no persistent connections to go
-stale — which eliminates this class of hang on Vercel. Plan:
-1. Create a Neon project (AWS **ap-south-1 / Mumbai**), get its pooled connection string.
-2. Swap `db/index.ts` to `drizzle-orm/neon-serverless` (supports the app's
+Two things then multiplied that cost into a reliable hang on the demo:
+- `<Link href="/admin">` and the whole `AdminNav` **prefetch by default**, and a
+  prefetch runs the same server render as a click. A single admin screen queued
+  up to a dozen full console renders at once (the browser's Network tab showed
+  six `admin?_rsc=…` requests for one click).
+- Four "count" helpers (`countUnmatchedPackages`, `countPendingKyc`,
+  `countOpenReports`, `countOpenDisputes`) selected **every matching row** and
+  read `.length`, instead of counting in SQL.
+
+Against Supabase's transaction pooler (`max: 10`) from a `bom1` Lambda, that
+fan-out blocked head-of-line and requests waited on each other indefinitely —
+postgres-js has no per-query timeout, and `connect_timeout` only covers opening
+a connection.
+
+**Fix applied:**
+1. Every page under `/admin` and `/support` now gates **before** it queries
+   (`await requireSupport()` / `requireAdmin()` as its first statement). The
+   layout gate is kept as defence in depth. Measured per request:
+
+   | Caller | Before | After |
+   |---|---|---|
+   | Logged out / prefetch | 15 statements | **0** |
+   | Signed-in non-staff | 15 statements | **1** |
+   | Admin (real console load) | 16 statements | 16 (unchanged) |
+
+2. `AdminNav` and the two console entry links prefetch on **hover intent**
+   (`prefetch={false}` until `onMouseEnter`) instead of on mere visibility.
+3. The four count helpers now use `count(*)` in SQL.
+4. `app/admin/loading.tsx` and `app/support/loading.tsx` give the console a
+   streamed skeleton, so the navigation commits instantly even on a slow DB
+   rather than leaving the button looking dead.
+
+This also closed a **data leak**: the pre-fix `/admin` response contained live
+platform counts (open disputes / reports / support threads) for logged-out
+requests, even though the flight also carried a redirect.
+
+**Still worth knowing.** Supabase's pooler drops idle server-side connections
+while Vercel freezes the function between requests, so a reused socket can still
+go stale. The existing mitigations stay in `db/index.ts` (`prepare:false`,
+`idle_timeout`, `max_lifetime`, `connect_timeout`, `max:10`, region pinned to
+`bom1`). If hangs ever return **with the query volume now this low**, migrating
+the demo DB to [Neon](https://neon.tech) — whose serverless driver uses
+HTTP/WebSocket, so there are no persistent connections to go stale — remains the
+structural fix:
+1. Create a Neon project (AWS **ap-south-1 / Mumbai**), get its pooled string.
+2. Swap `db/index.ts` to `drizzle-orm/neon-serverless` (it supports the app's
    `db.transaction()` calls). Schema/queries/seed are unchanged.
 3. Re-run migrations + fixtures against Neon; set Vercel `DATABASE_URL` to Neon.
 

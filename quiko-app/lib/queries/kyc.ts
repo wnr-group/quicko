@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { kycVerifications, profiles } from "@/db/schema";
 import { notify } from "@/lib/queries/notifications";
@@ -108,9 +108,9 @@ export async function rejectKyc(kycId: string, notes?: string): Promise<Result> 
 
 /** Admin dashboard counters. */
 export async function countPendingKyc(): Promise<number> {
-  const rows = await db
-    .select({ id: kycVerifications.id })
+  const [row] = await db
+    .select({ n: sql<number>`count(*)::int` })
     .from(kycVerifications)
-    .where(and(eq(kycVerifications.status, "pending")));
-  return rows.length;
+    .where(eq(kycVerifications.status, "pending"));
+  return row?.n ?? 0;
 }
