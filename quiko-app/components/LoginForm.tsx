@@ -92,7 +92,7 @@ export function LoginForm({ next }: { next?: string }) {
           </Button>
         ) : (
           <>
-            <Button onClick={verify} disabled={pending || code.length < 4}>
+            <Button onClick={verify} disabled={pending || code.length < 6}>
               {pending ? "Verifying…" : "Verify & Continue"}
             </Button>
             <button
