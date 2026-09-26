@@ -24,10 +24,14 @@ const globalForDb = globalThis as unknown as {
 const sql =
   globalForDb.__quikoSql ??
   postgres(connectionString, {
-    // The transaction pooler (PgBouncer) multiplexes to backends, so a modest
-    // client pool is safe and — unlike max:1 — a single slow/stale connection
-    // no longer blocks every concurrent request on the instance.
-    max: 10,
+    // Keep the per-instance pool small. Each open connection is another chance
+    // to be frozen mid-protocol and leave a backend wedged in `ClientRead`
+    // holding a pooler slot — three at once were observed on the demo, all
+    // from the admin dashboard's old 15-way fan-out. Now that the heavy pages
+    // issue a single statement, a render needs one connection; a few spare
+    // ones keep the remaining small Promise.all sites from serialising, and
+    // the query deadline below stops a stale one blocking others for long.
+    max: 3,
     prepare: false, // transaction pooler can't do prepared statements
     // Supabase's pooler drops idle server-side connections; without these a
     // reused socket goes stale and the next query hangs until it's cancelled

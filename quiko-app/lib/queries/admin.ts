@@ -2,7 +2,7 @@ import "server-only";
 import { inArray, desc, asc, sql, eq, or, ilike } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
-import { profiles, packages, trips, matches, transactions, messages, matchEvents } from "@/db/schema";
+import { profiles, packages, trips, matches, transactions, messages, matchEvents, kycVerifications, supportThreads, disputes, reports } from "@/db/schema";
 import { detourKm } from "@/core/geo";
 import { QUIKO_COMMISSION_RATE } from "@/core/pricing";
 
@@ -84,6 +84,92 @@ export async function getOpsMetrics() {
     avgTimeToMatchHours: Math.round(Number(ttm.avgHours) * 10) / 10,
     demand,
     supply,
+  };
+}
+
+/**
+ * Everything the admin dashboard shows, in ONE round trip.
+ *
+ * It used to be 15 separate queries fired with Promise.all. Against Supabase's
+ * transaction pooler from a Vercel Lambda that is genuinely harmful: a single
+ * page render grabbed up to `max` pooler connections at once, and backends
+ * were observed wedging in `Client/ClientRead` (three at a time, 120s+) until
+ * the page blew its deadline. Every value below is an independent scalar
+ * aggregate or a small list, so one statement answers the whole page — one
+ * connection, one round trip, nothing to fan out and nothing to wedge.
+ */
+export async function getDashboardSnapshot() {
+  const [row] = await db.execute<{
+    users: number; packages: number; trips: number; matches: number;
+    delivered: number; gmv: string | number;
+    pending_kyc: number; open_support: number; open_disputes: number;
+    open_reports: number; unmatched: number;
+    pkg_total: number; pkg_matched: number;
+    match_total: number; match_delivered: number; match_cancelled: number; match_disputed: number;
+    avg_hours: string | number;
+    demand: { route: string; n: number }[] | null;
+    supply: { route: string; n: number }[] | null;
+  }>(sql`
+    select
+      (select count(*)::int from ${profiles})                                             as users,
+      (select count(*)::int from ${packages})                                             as packages,
+      (select count(*)::int from ${trips})                                                as trips,
+      (select count(*)::int from ${matches})                                              as matches,
+      (select count(*)::int from ${matches}
+         where ${matches.status} in ('delivered','completed'))                            as delivered,
+      (select coalesce(sum(${matches.agreedPrice}), 0) from ${matches}
+         where ${matches.status} in ('delivered','completed'))                            as gmv,
+      (select count(*)::int from ${kycVerifications} where ${kycVerifications.status} = 'pending') as pending_kyc,
+      (select count(*)::int from ${supportThreads}  where ${supportThreads.status}  = 'open')      as open_support,
+      (select count(*)::int from ${disputes}        where ${disputes.status}        = 'open')      as open_disputes,
+      (select count(*)::int from ${reports}         where ${reports.status}         = 'open')      as open_reports,
+      (select count(*)::int from ${packages}        where ${packages.status}        = 'active')    as unmatched,
+      (select count(*)::int from ${packages})                                             as pkg_total,
+      (select count(*)::int from ${packages} where ${packages.status} <> 'active')        as pkg_matched,
+      (select count(*)::int from ${matches})                                              as match_total,
+      (select count(*)::int from ${matches} where ${matches.status} in ('delivered','completed')) as match_delivered,
+      (select count(*)::int from ${matches} where ${matches.status} = 'cancelled')        as match_cancelled,
+      (select count(*)::int from ${matches} where ${matches.status} = 'disputed')         as match_disputed,
+      (select coalesce(avg(extract(epoch from (${matches.createdAt} - ${packages.createdAt})) / 3600), 0)
+         from ${matches} join ${packages} on ${matches.packageId} = ${packages.id})       as avg_hours,
+      (select coalesce(json_agg(d), '[]'::json) from (
+         select ${packages.fromCity} || ' → ' || ${packages.toCity} as route, count(*)::int as n
+         from ${packages} where ${packages.status} = 'active'
+         group by ${packages.fromCity}, ${packages.toCity} order by count(*) desc limit 6) d)      as demand,
+      (select coalesce(json_agg(s), '[]'::json) from (
+         select ${trips.fromCity} || ' → ' || ${trips.toCity} as route, count(*)::int as n
+         from ${trips} where ${trips.status} = 'active'
+         group by ${trips.fromCity}, ${trips.toCity} order by count(*) desc limit 6) s)           as supply
+  `);
+
+  const n = (v: unknown) => Number(v ?? 0);
+  const pct = (num: number, den: number) => (den ? Math.round((num / den) * 100) : 0);
+  const gmv = n(row?.gmv);
+
+  return {
+    stats: {
+      users: n(row?.users),
+      packages: n(row?.packages),
+      trips: n(row?.trips),
+      matches: n(row?.matches),
+      delivered: n(row?.delivered),
+      gmv,
+      commission: Math.round(gmv * QUIKO_COMMISSION_RATE),
+    },
+    pendingKyc: n(row?.pending_kyc),
+    openSupport: n(row?.open_support),
+    openDisputes: n(row?.open_disputes),
+    openReports: n(row?.open_reports),
+    unmatched: n(row?.unmatched),
+    metrics: {
+      matchRate: pct(n(row?.pkg_matched), n(row?.pkg_total)),
+      successRate: pct(n(row?.match_delivered), n(row?.match_total)),
+      cancelRate: pct(n(row?.match_cancelled), n(row?.match_total)),
+      disputed: n(row?.match_disputed),
+      avgTimeToMatchHours: Math.round(n(row?.avg_hours) * 10) / 10,
+      demand: row?.demand ?? [],
+      supply: row?.supply ?? [],
+    },
   };
 }
 

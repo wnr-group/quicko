@@ -249,6 +249,40 @@ instead of hanging; at the default timeout every page, and the
 `db.transaction()` paths (commit, early-return and the nested auto-flag write),
 behave exactly as before.
 
+### 8c. Third round — the fan-out itself was the trigger
+
+With the deadline in place the console stopped hanging, but it now showed
+"Couldn't load this page": the layout's `getProfile()` succeeded (the sidebar
+rendered) while the dashboard's fan-out blew the 8s deadline. `pg_stat_activity`
+showed **three** backends wedged at once in `Client/ClientRead` (120s+), all of
+them dashboard queries, with connections up at 18.
+
+So the fan-out was not just a symptom, it was the trigger: firing 15 queries
+through `Promise.all` made postgres-js open up to `max` pooler connections for a
+single page render, and each open connection is another chance to be frozen
+mid-protocol and leave a wedged backend holding a pooler slot. (`.cancel()` does
+not reliably rescue these — cancel requests are poorly supported through a
+transaction pooler.)
+
+**Fix applied:**
+- `getDashboardSnapshot()` in `lib/queries/admin.ts` answers the whole dashboard
+  in **one statement** — every value is an independent scalar aggregate, and the
+  two route lists fold in via `json_agg`. An admin dashboard load went from
+  **16 statements to 2** (the profile gate + the snapshot) on one connection.
+  Measured against production: **25–88 ms warm** (351 ms cold, i.e. connection
+  setup), versus 409 ms and ten connections for the old fan-out.
+- `db/index.ts` `max: 10 → 3`. A render now needs one connection; the spare two
+  keep the remaining small `Promise.all` sites from serialising.
+
+The per-query count helpers (`countPendingKyc` etc.) are unchanged and still
+used by other pages — only the dashboard switched.
+
+Verified locally: dashboard values identical to direct SQL (users 31, packages
+33, trips 22, matches 19, deliveries 12, GMV ₹7,098, Disputes 1, Moderation 1,
+Support 3, Matching 15, both route lists populated); every admin/support/app
+page renders; `db.transaction()` still commits; 10 concurrent `/admin` loads all
+200 at ~40 ms with `max: 3`.
+
 **Still worth knowing.** Supabase's pooler drops idle server-side connections
 while Vercel freezes the function between requests, so a reused socket can still
 go stale — the deadline turns that into a fast, retryable error rather than

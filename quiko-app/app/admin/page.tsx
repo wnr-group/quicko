@@ -1,9 +1,5 @@
 import Link from "next/link";
-import { getPlatformStats, countUnmatchedPackages, getOpsMetrics } from "@/lib/queries/admin";
-import { countPendingKyc } from "@/lib/queries/kyc";
-import { countOpenSupport } from "@/lib/queries/support";
-import { countOpenDisputes } from "@/lib/queries/disputes";
-import { countOpenReports } from "@/lib/queries/reports";
+import { getDashboardSnapshot } from "@/lib/queries/admin";
 import { requireSupport, isAdminProfile } from "@/lib/auth";
 import { inr } from "@/core/format";
 
@@ -12,15 +8,11 @@ export default async function AdminDashboard() {
   // Next renders layout and page concurrently, so a layout redirect does not
   // stop the page body from running its queries (and leaking their results).
   const admin = isAdminProfile(await requireSupport());
-  const [stats, pendingKyc, openSupport, openDisputes, openReports, unmatched, metrics] = await Promise.all([
-    getPlatformStats(),
-    countPendingKyc(),
-    countOpenSupport(),
-    countOpenDisputes(),
-    countOpenReports(),
-    countUnmatchedPackages(),
-    getOpsMetrics(),
-  ]);
+  // One statement, one connection. The old Promise.all fanned this page out
+  // over 15 queries, which is what kept wedging the pooler — see the note on
+  // getDashboardSnapshot.
+  const { stats, pendingKyc, openSupport, openDisputes, openReports, unmatched, metrics } =
+    await getDashboardSnapshot();
 
   return (
     <>
