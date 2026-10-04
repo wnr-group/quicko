@@ -1,19 +1,22 @@
 import Link from "next/link";
+import { ExplorePostTrigger } from "@/components/ExplorePostTrigger";
+import type { SendParams } from "@/lib/sendParams";
 import { initials, timeWindow, dateShort } from "@/core/format";
 import { TRANSPORT_ICONS, IconShieldCheck, IconChevronRight, IconArrowRight, IconStar } from "@/components/icons";
 
-// Discovery card: name + schedule + trust signals (no price — details not given yet).
+// Discovery card: name + schedule + trust signals (no price). Tapping it requests this traveller.
 export function ExploreTravelerCard({
-  href, profileHref, name, kycLevel, transport, travelDate, arriveDate, departTime, arriveTime, rating, deliveries,
+  params, tripId, gate, profileHref, name, kycLevel, transport, travelDate, arriveDate, departTime, arriveTime, rating, deliveries,
 }: {
-  href: string; profileHref: string; name: string; kycLevel: number; transport: string;
+  params: SendParams; tripId: string; gate: string | null; profileHref: string; name: string; kycLevel: number; transport: string;
   travelDate: string; arriveDate?: string | null; departTime: string | null; arriveTime: string | null;
   rating: number; deliveries: number;
 }) {
   const Transport = TRANSPORT_ICONS[transport] ?? TRANSPORT_ICONS.bus;
   return (
     <div className="rounded-3xl bg-canvas p-4 shadow-card">
-      <Link href={href} className="flex items-center gap-3 active:scale-[0.99]">
+      <ExplorePostTrigger params={params} tripId={tripId} gate={gate}
+        className="flex w-full items-center gap-3 text-left active:scale-[0.99]">
         <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-ink text-sm font-bold text-brand">
           {initials(name)}
         </span>
@@ -38,7 +41,7 @@ export function ExploreTravelerCard({
           </div>
         </div>
         <IconChevronRight width={18} height={18} className="shrink-0 text-muted" />
-      </Link>
+      </ExplorePostTrigger>
 
       <div className="mt-3 flex items-center justify-between border-t border-line pt-2.5">
         <span className="flex items-center gap-1.5 text-[12px] font-semibold text-muted">

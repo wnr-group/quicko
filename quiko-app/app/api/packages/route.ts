@@ -29,7 +29,6 @@ export async function POST(req: Request) {
     travelDate: today,
     weightKg: Number(b.weightKg ?? 1),
     timePreference: "flexible" as const,
-    description: String(b.description ?? ""),
     offerPrice: 1_000_000, // clamped to the computed max price server-side
   };
 

@@ -14,7 +14,6 @@ export const createPackageSchema = z
     declaredValue: z.number().int().min(0).max(1_000_000).optional(),
     timePreference: z.enum(["same_day", "next_day", "flexible"]),
     serviceLevel: z.enum(["flexible", "standard", "fast", "express"]).default("standard"),
-    description: z.string().trim().max(300).optional(),
     receiverName: z.string().trim().min(2).max(60).optional(),
     receiverPhone: z
       .string()

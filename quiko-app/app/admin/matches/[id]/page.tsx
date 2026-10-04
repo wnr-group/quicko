@@ -64,7 +64,6 @@ export default async function AdminMatchPage({ params }: { params: Promise<{ id:
       </div>
 
       <Card title="Package">
-        <KV k="Contents" v={pkg.description ?? "—"} />
         <KV k="Weight" v={`${pkg.weightKg} kg`} />
         <KV k="Receiver" v={pkg.receiverName ? `${pkg.receiverName} · ${formatPhone(pkg.receiverPhone)}` : "—"} />
         <KV k="Delivery OTP" v={match.deliveryOtp ?? "—"} />

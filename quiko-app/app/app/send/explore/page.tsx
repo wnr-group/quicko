@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { placeShort } from "@/core/format";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
@@ -8,9 +7,12 @@ import { StepHeader } from "@/components/formkit";
 import { ExploreTravelerCard } from "@/components/ExploreTravelerCard";
 import { ExploreFilters } from "@/components/ExploreFilters";
 import { ReachFilter } from "@/components/ReachFilter";
+import { ServiceLevelPicker } from "@/components/ServiceLevelPicker";
+import { ExplorePostTrigger } from "@/components/ExplorePostTrigger";
+import { getAuthUser, getProfile } from "@/lib/auth";
 
 import { exploreTrips } from "@/lib/queries/trips";
-import { parseSendParams, toSendQuery } from "@/lib/sendParams";
+import { parseSendParams } from "@/lib/sendParams";
 
 // Public — browse travelers without logging in.
 export default async function ExplorePage({
@@ -52,13 +54,23 @@ export default async function ExplorePage({
     arrival: "earliest arrival first", departure: "earliest departure first", rating: "highest rated first", trust: "most trusted first",
   };
 
-  const query = toSendQuery(effective);
-  const detailsHref = (extra: string) => `/app/send/details?${query}&${extra}`;
+  // Posting needs an account. Send signed-out / unregistered users through login
+  // or onboarding and back to this exact page.
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(sp)) if (typeof v === "string") qs.set(k, v);
+  const here = `/app/send/explore?${qs.toString()}`;
+  const user = await getAuthUser();
+  const profile = user ? await getProfile() : null;
+  const gate = !user || !profile
+    ? `/login?next=${encodeURIComponent(here)}`
+    : !profile.fullName
+      ? `/onboarding?next=${encodeURIComponent(here)}`
+      : null;
 
   return (
     <PhoneFrame>
       <TopBar title="Explore travellers" back />
-      <StepHeader step={2} total={3} label="Pick a traveller" />
+      <StepHeader step={2} total={2} label="Pick a traveller" />
       <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-28 pt-3">
         {/* Locality on one line; the full geocoded address stays available beneath. */}
         <div className="mb-3 rounded-2xl bg-canvas px-4 py-3 shadow-card">
@@ -71,6 +83,10 @@ export default async function ExplorePage({
             {parsed.from.label} &rarr; {parsed.to.label}
           </p>
         </div>
+
+        <Suspense fallback={null}>
+          <ServiceLevelPicker value={parsed.serviceLevel} />
+        </Suspense>
 
         <Suspense fallback={null}>
           <ReachFilter min={parsed.dateFrom} />
@@ -99,7 +115,9 @@ export default async function ExplorePage({
               {trips.map(({ trip, traveler }) => (
                 <ExploreTravelerCard
                   key={trip.id}
-                  href={detailsHref(`tripId=${trip.id}`)}
+                  params={effective}
+                  tripId={trip.id}
+                  gate={gate}
                   profileHref={`/app/travelers/${traveler.id}`}
                   name={traveler.fullName ?? "Traveler"}
                   kycLevel={traveler.kycLevel}
@@ -117,13 +135,13 @@ export default async function ExplorePage({
         )}
       </div>
 
-      {/* Floating "notify me" */}
+      {/* Floating "notify me" — posts without a traveller */}
       <div className="pb-safe pointer-events-none absolute inset-x-0 bottom-0 px-5 pt-8">
-        <Link href={detailsHref("notify=1")}
+        <ExplorePostTrigger params={effective} gate={gate}
           className="pointer-events-auto flex w-full flex-col items-center rounded-2xl bg-brand px-5 py-3 text-center shadow-brand transition-transform active:scale-[0.98]">
           <span className="text-[15px] font-bold text-ink">Can&rsquo;t find a match?</span>
-          <span className="text-[12px] text-ink-soft">Leave it here &amp; we&rsquo;ll notify you when one appears</span>
-        </Link>
+          <span className="text-[12px] text-ink-soft">Post it &amp; we&rsquo;ll notify you when one appears</span>
+        </ExplorePostTrigger>
       </div>
     </PhoneFrame>
   );

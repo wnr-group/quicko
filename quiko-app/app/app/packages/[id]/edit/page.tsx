@@ -37,7 +37,6 @@ export default async function EditPackagePage({
           timePreference: pkg.timePreference,
           serviceLevel: pkg.serviceLevel,
           offerPrice: pkg.offerPrice,
-          description: pkg.description,
           receiverName: pkg.receiverName,
           receiverPhone: pkg.receiverPhone,
         }}

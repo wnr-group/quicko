@@ -33,9 +33,6 @@ export default async function AdminMatchingDetailPage({ params }: { params: Prom
             <h1 className="text-xl font-black tracking-tight">
               {pkg.fromCity} &rarr; {pkg.toCity}
             </h1>
-            <p className="mt-1 text-[13px] text-muted">
-              {pkg.description ?? "No description"}
-            </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Chip label={`${pkg.weightKg} kg`} />

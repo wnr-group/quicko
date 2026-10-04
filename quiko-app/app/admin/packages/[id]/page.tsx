@@ -38,7 +38,6 @@ export default async function AdminPackagePage({ params }: { params: Promise<{ i
               v={sender?.fullName ? `${sender.fullName} · ${formatPhone(sender.phone)}` : "—"}
               link={sender ? `/admin/users/${sender.id}` : undefined}
             />
-            <KV k="Contents" v={pkg.description ?? "—"} />
             <KV k="Weight" v={`${pkg.weightKg} kg`} />
             <KV
               k="Receiver"

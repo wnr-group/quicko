@@ -23,7 +23,7 @@ export default function TermsPage() {
         </Section>
 
         <Section n="2" title="How it works">
-          Senders post a package with its route, weight and a short description.
+          Senders post a package with its route, weight and service level.
           Travellers post trips with spare capacity. When both sides agree, a match
           is created. Quiko is a marketplace that introduces the two parties — the
           delivery itself is carried out directly between the Sender and Traveller.

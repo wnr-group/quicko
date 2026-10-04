@@ -5,11 +5,11 @@ import { dateWindow } from "@/lib/dates";
 
 // Public — anyone can explore travelers; login is required only to post (step 3).
 export default async function SendPage() {
-  const { today, tomorrow, weekOut } = dateWindow();
+  const { today, weekOut } = dateWindow();
   return (
     <PhoneFrame>
       <TopBar title="Send a Package" back />
-      <SendStep1 today={today} tomorrow={tomorrow} weekOut={weekOut} />
+      <SendStep1 today={today} weekOut={weekOut} />
     </PhoneFrame>
   );
 }

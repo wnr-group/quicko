@@ -35,7 +35,6 @@ export interface PackageFormInitial {
   timePreference: TimePreference;
   serviceLevel?: ServiceLevel;
   offerPrice: number;
-  description?: string | null;
   receiverName?: string | null;
   receiverPhone?: string | null;
 }
@@ -62,7 +61,6 @@ export function CreatePackageForm({
   const [weightKg, setWeightKg] = useState(initial?.weightKg ?? 1);
   const [timePreference, setTimePreference] = useState<TimePreference>(initial?.timePreference ?? "next_day");
   const [serviceLevel, setServiceLevel] = useState<ServiceLevel>(initial?.serviceLevel ?? "standard");
-  const [description, setDescription] = useState(initial?.description ?? "");
   const [receiverName, setReceiverName] = useState(initial?.receiverName ?? "");
   const [receiverPhone, setReceiverPhone] = useState(initial?.receiverPhone ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -118,7 +116,6 @@ export function CreatePackageForm({
         toLabel: to.label, toLat: to.lat, toLng: to.lng,
         travelDate, dateTo, weightKg, timePreference, serviceLevel,
         offerPrice: breakdown.maxPrice,
-        description: description.trim() || undefined,
         receiverName: receiverName.trim() || undefined,
         receiverPhone: receiverPhone.trim() || undefined,
       };
@@ -174,14 +171,6 @@ export function CreatePackageForm({
               <IconPlus />
             </StepBtn>
           </div>
-        </Card>
-
-        {/* Description (optional) */}
-        <Card>
-          <Label>Description (optional)</Label>
-          <textarea value={description} onChange={(e) => setDescription(e.target.value)}
-            placeholder="e.g. Documents and a small gift for family" rows={3} maxLength={300}
-            className="w-full resize-none rounded-xl border border-line bg-white px-3.5 py-3 text-[15px] outline-none focus:border-ink" />
         </Card>
 
         {/* When */}

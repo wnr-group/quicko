@@ -97,26 +97,16 @@ export default async function PackageDetailPage({
           </dl>
         </div>
 
-        {/* Contents + receiver (once provided) */}
-        {(pkg.description || pkg.receiverName) && (
+        {/* Receiver (once provided) */}
+        {pkg.receiverName && (
           <div className="mt-3 rounded-3xl bg-canvas p-5 shadow-card">
-            {pkg.description && (
-              <div className={pkg.receiverName ? "mb-3" : ""}>
-                <dt className="text-[11px] font-bold uppercase tracking-wide text-muted">Contents</dt>
-                <dd className="mt-0.5 text-[14px]">{pkg.description}</dd>
-              </div>
-            )}
-            {pkg.receiverName && (
-              <>
-                <dt className="text-[11px] font-bold uppercase tracking-wide text-muted">Receiver</dt>
-                <dd className="mt-0.5 text-[14px] font-semibold">
-                  {pkg.receiverName}
-                  {pkg.receiverPhone && (
-                    <span className="font-normal text-muted"> · {pkg.receiverPhone}</span>
-                  )}
-                </dd>
-              </>
-            )}
+            <dt className="text-[11px] font-bold uppercase tracking-wide text-muted">Receiver</dt>
+            <dd className="mt-0.5 text-[14px] font-semibold">
+              {pkg.receiverName}
+              {pkg.receiverPhone && (
+                <span className="font-normal text-muted"> · {pkg.receiverPhone}</span>
+              )}
+            </dd>
           </div>
         )}
 

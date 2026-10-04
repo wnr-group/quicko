@@ -24,7 +24,6 @@ export interface PackageDraft {
   weightKg: number;
   declaredValue: number; // ₹
   timePreference: TimePreference;
-  description: string;
   offerPrice: number; // ₹ — what the sender offers (≤ maxPrice)
 }
 

@@ -4,12 +4,11 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
-import { Card, Label, FieldButton, Segmented, StepHeader, TIME_OPTIONS } from "@/components/formkit";
-import { IconMapPin, IconFlag } from "@/components/icons";
+import { Card, Label, FieldButton, StepBtn, StepHeader } from "@/components/formkit";
+import { IconMapPin, IconFlag, IconPlus, IconMinus } from "@/components/icons";
 import { reverseGeocode } from "@/components/geocode";
 import { toSendQuery } from "@/lib/sendParams";
 import type { PinnedLocation } from "@/core/geo";
-import type { TimePreference } from "@/core/types";
 
 const LocationSheet = dynamic(() => import("@/components/LocationSheet"), { ssr: false });
 
@@ -18,36 +17,32 @@ const LocationSheet = dynamic(() => import("@/components/LocationSheet"), { ssr:
 const STORE_KEY = "quiko_send_step1";
 
 export function SendStep1({
-  today, tomorrow, weekOut,
+  today, weekOut,
 }: {
-  today: string; tomorrow: string; weekOut: string;
+  today: string; weekOut: string;
 }) {
   const router = useRouter();
   const [from, setFrom] = useState<PinnedLocation | null>(null);
   const [to, setTo] = useState<PinnedLocation | null>(null);
   const [sheet, setSheet] = useState<"from" | "to" | null>(null);
-  const [timePreference, setTimePreference] = useState<TimePreference>("next_day");
-  const [flexFrom, setFlexFrom] = useState("");
-  const [flexTo, setFlexTo] = useState("");
+  const [weightKg, setWeightKg] = useState(1);
 
   useEffect(() => {
     // Restore a previous selection (e.g. after tapping back from Explore) so the
-    // pickup/destination and timing the user already chose aren't lost.
+    // pickup/destination and weight the user already chose aren't lost.
     try {
       const raw = sessionStorage.getItem(STORE_KEY);
       if (raw) {
         const s = JSON.parse(raw) as Partial<{
           from: PinnedLocation; to: PinnedLocation;
-          timePreference: TimePreference; flexFrom: string; flexTo: string;
+          weightKg: number;
         }>;
         // Restoring client-only state after hydration: an effect is correct here
         // (a lazy useState initializer would mismatch the server render).
         /* eslint-disable react-hooks/set-state-in-effect */
         if (s.from) setFrom(s.from);
         if (s.to) setTo(s.to);
-        if (s.timePreference) setTimePreference(s.timePreference);
-        if (s.flexFrom) setFlexFrom(s.flexFrom);
-        if (s.flexTo) setFlexTo(s.flexTo);
+        if (s.weightKg) setWeightKg(s.weightKg);
         /* eslint-enable react-hooks/set-state-in-effect */
         if (s.from) return; // had a pickup already → don't override with geolocation
       }
@@ -70,26 +65,25 @@ export function SendStep1({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const from0 = flexFrom || today;
-  const to0 = flexTo || weekOut;
-  const dateFrom =
-    timePreference === "same_day" ? today : timePreference === "next_day" ? tomorrow : from0;
-  const dateTo = timePreference === "flexible" ? to0 : dateFrom;
-  const dateOk = timePreference !== "flexible" || from0 <= to0;
-  const ready = !!from && !!to && dateOk;
+  const ready = !!from && !!to;
 
   function explore() {
     if (!from || !to) return;
     try {
-      sessionStorage.setItem(STORE_KEY, JSON.stringify({ from, to, timePreference, flexFrom, flexTo }));
+      sessionStorage.setItem(STORE_KEY, JSON.stringify({ from, to, weightKg }));
     } catch {}
-    const q = toSendQuery({ from, to, timePreference, dateFrom, dateTo });
+    // No timing choice on this step: look a week ahead; Explore's "Should reach
+    // between" filter narrows it.
+    const q = toSendQuery({
+      from, to, timePreference: "flexible", dateFrom: today, dateTo: weekOut,
+      weightKg, serviceLevel: "standard",
+    });
     router.push(`/app/send/explore?${q}`);
   }
 
   return (
     <div className="flex flex-1 flex-col">
-      <StepHeader step={1} total={3} label="Route & timing" />
+      <StepHeader step={1} total={2} label="Route & weight" />
       <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-5">
         <Card>
           <Label>Where are you sending?</Label>
@@ -105,27 +99,19 @@ export function SendStep1({
         </Card>
 
         <Card>
-          <Label>When should it arrive?</Label>
-          <Segmented options={TIME_OPTIONS} value={timePreference}
-            onChange={(v) => setTimePreference(v)} />
-          {timePreference === "flexible" && (
-            <div className="mt-3 flex items-end gap-2">
-              <label className="min-w-0 flex-1">
-                <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-muted">Earliest</span>
-                <input type="date" value={from0} min={today} onChange={(e) => setFlexFrom(e.target.value)}
-                  className="w-full min-w-0 rounded-xl border border-line-strong bg-canvas px-3 py-2.5 text-[14px] outline-none focus:border-ink" />
-              </label>
-              <label className="min-w-0 flex-1">
-                <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-muted">Latest</span>
-                <input type="date" value={to0} min={from0} onChange={(e) => setFlexTo(e.target.value)}
-                  className="w-full min-w-0 rounded-xl border border-line-strong bg-canvas px-3 py-2.5 text-[14px] outline-none focus:border-ink" />
-              </label>
+          <Label>Weight</Label>
+          <div className="flex items-center justify-between">
+            <StepBtn label="Decrease weight" onClick={() => setWeightKg((w) => Math.max(1, w - 1))} disabled={weightKg <= 1}>
+              <IconMinus />
+            </StepBtn>
+            <div className="text-center tabular-nums">
+              <span className="text-3xl font-black">{weightKg}</span>
+              <span className="ml-1 text-sm font-semibold text-muted">kg</span>
             </div>
-          )}
-          <p className="mt-2.5 text-[13px] leading-snug text-muted">
-            We&rsquo;ll show travelers arriving in this window. You add package
-            details after you pick one — so no price yet.
-          </p>
+            <StepBtn label="Increase weight" onClick={() => setWeightKg((w) => Math.min(15, w + 1))} disabled={weightKg >= 15}>
+              <IconPlus />
+            </StepBtn>
+          </div>
         </Card>
       </div>
 
