@@ -9,6 +9,8 @@ import { spareCapacity } from "@/lib/queries/requests";
 import { explorePackages } from "@/lib/queries/packages";
 import { inr, dateShort, initials, placeShort } from "@/core/format";
 import { VERIFIED_LEVEL } from "@/lib/queries/kyc";
+import { priceForTrip } from "@/core/pricing";
+import { todayIST } from "@/lib/dates";
 
 const SPEED_LABELS: Record<string, string> = {
   same_day: "Same day",
@@ -69,7 +71,9 @@ export default async function TripPackagesPage({
               {matches.length} package{matches.length > 1 ? "s" : ""} on your route
             </p>
             <div className="flex flex-col gap-3">
-              {matches.map(({ package: pkg, sender }) => (
+              {matches.map(({ package: pkg, sender }) => {
+                const { price } = priceForTrip(pkg, trip, todayIST());
+                return (
                 <div key={pkg.id} className="rounded-3xl bg-canvas p-4 shadow-card">
                   <div className="flex items-center gap-3">
                     <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ink text-xs font-bold text-brand">
@@ -83,7 +87,7 @@ export default async function TripPackagesPage({
                         <span>· {sender.deliveriesCount} sent</span>
                       </div>
                     </div>
-                    <span className="text-lg font-black">{inr(pkg.offerPrice)}</span>
+                    <span className="text-lg font-black">{inr(price)}</span>
                   </div>
 
                   <div className="mt-3 flex items-center gap-1.5 border-t border-line pt-3 font-semibold">
@@ -99,9 +103,10 @@ export default async function TripPackagesPage({
                     <span>{dateShort(pkg.travelDate)}</span>
                   </div>
 
-                  <OfferButton tripId={trip.id} packageId={pkg.id} price={pkg.offerPrice} verified={verified} />
+                  <OfferButton tripId={trip.id} packageId={pkg.id} price={price} verified={verified} />
                 </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}

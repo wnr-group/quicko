@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui";
 import { IconMapPin, IconFlag, IconChevronRight, IconPlus, IconMinus } from "@/components/icons";
-import { calculatePrice, type ServiceLevel } from "@/core/pricing";
+import { calculatePrice } from "@/core/pricing";
 import { roadDistanceKm, type PinnedLocation } from "@/core/geo";
 import { reverseGeocode } from "@/components/geocode";
 import type { TimePreference } from "@/core/types";
@@ -18,13 +18,6 @@ const TIME_OPTIONS: { value: TimePreference; label: string }[] = [
   { value: "flexible", label: "Flexible" },
 ];
 
-const SERVICE_OPTIONS: { value: ServiceLevel; label: string }[] = [
-  { value: "flexible", label: "Flexible" },
-  { value: "standard", label: "Standard" },
-  { value: "fast", label: "Fast" },
-  { value: "express", label: "Express" },
-];
-
 export interface PackageFormInitial {
   from: PinnedLocation;
   to: PinnedLocation;
@@ -33,7 +26,6 @@ export interface PackageFormInitial {
   weightKg: number;
   declaredValue?: number;
   timePreference: TimePreference;
-  serviceLevel?: ServiceLevel;
   offerPrice: number;
   receiverName?: string | null;
   receiverPhone?: string | null;
@@ -60,7 +52,6 @@ export function CreatePackageForm({
 
   const [weightKg, setWeightKg] = useState(initial?.weightKg ?? 1);
   const [timePreference, setTimePreference] = useState<TimePreference>(initial?.timePreference ?? "next_day");
-  const [serviceLevel, setServiceLevel] = useState<ServiceLevel>(initial?.serviceLevel ?? "standard");
   const [receiverName, setReceiverName] = useState(initial?.receiverName ?? "");
   const [receiverPhone, setReceiverPhone] = useState(initial?.receiverPhone ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -102,8 +93,8 @@ export function CreatePackageForm({
   const distance = from && to ? roadDistanceKm(from, to) : 0;
   // Price is computed for the request but never shown here — seen at payment.
   const breakdown = useMemo(
-    () => calculatePrice({ weightKg, distanceKm: distance, serviceLevel }),
-    [weightKg, distance, serviceLevel],
+    () => calculatePrice({ weightKg, distanceKm: distance, serviceLevel: "standard" }),
+    [weightKg, distance],
   );
   const ready = !!from && !!to && distance > 0 && dateOk;
 
@@ -114,7 +105,7 @@ export function CreatePackageForm({
       const payload = {
         fromLabel: from.label, fromLat: from.lat, fromLng: from.lng,
         toLabel: to.label, toLat: to.lat, toLng: to.lng,
-        travelDate, dateTo, weightKg, timePreference, serviceLevel,
+        travelDate, dateTo, weightKg, timePreference,
         offerPrice: breakdown.maxPrice,
         receiverName: receiverName.trim() || undefined,
         receiverPhone: receiverPhone.trim() || undefined,
@@ -194,22 +185,6 @@ export function CreatePackageForm({
           )}
           <p className="mt-2.5 text-[13px] leading-snug text-muted">
             We&rsquo;ll match you with travellers arriving in this window.
-          </p>
-        </Card>
-
-        {/* Service level (price/speed tier) */}
-        <Card>
-          <Label>Service level</Label>
-          <Segmented options={SERVICE_OPTIONS} value={serviceLevel}
-            onChange={(v) => setServiceLevel(v as ServiceLevel)} />
-          <p className="mt-2.5 text-[13px] leading-snug text-muted">
-            {serviceLevel === "flexible"
-              ? "Flexible saves you 35% — you wait for a matching journey."
-              : serviceLevel === "express"
-                ? "Express prioritises the fastest travellers, at a premium."
-                : serviceLevel === "fast"
-                  ? "Fast leans toward quicker journeys for a small premium."
-                  : "Standard — the balanced default."}
           </p>
         </Card>
 

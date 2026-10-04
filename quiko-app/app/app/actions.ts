@@ -7,7 +7,7 @@ import {
   createPackageSchema,
   createTripSchema,
   profileSchema,
-  type CreatePackageInput,
+  type CreatePackageRequest,
   type CreateTripInput,
 } from "@/lib/validation";
 import {
@@ -19,6 +19,8 @@ import {
   getPackage,
 } from "@/lib/queries/packages";
 import { updateProfile } from "@/lib/queries/users";
+import { priceForTrip, serviceLevelForArrival } from "@/core/pricing";
+import { todayIST } from "@/lib/dates";
 import {
   sendRequest,
   acceptRequest,
@@ -145,7 +147,7 @@ export async function rateTravelerAction(
   return res;
 }
 
-export async function createPackageAction(input: CreatePackageInput) {
+export async function createPackageAction(input: CreatePackageRequest) {
   const user = await requireUser();
   const parsed = createPackageSchema.safeParse(input);
   if (!parsed.success) {
@@ -159,7 +161,7 @@ export async function createPackageAction(input: CreatePackageInput) {
 // Explore-first: create the package with the details, then either request the
 // chosen traveler (tripId) or leave it open (notify-me). Redirects to detail.
 export async function createFromExploreAction(
-  input: CreatePackageInput,
+  input: CreatePackageRequest,
   tripId?: string,
 ) {
   const user = await requireUser();
@@ -180,7 +182,14 @@ export async function createFromExploreAction(
     if (unverified) return { ok: false as const, error: unverified };
   }
 
-  const pkg = await createPackage(user.id, parsed.data);
+  // The tier (and so the price) follows from when the chosen traveller arrives.
+  // With no traveller yet ("notify me") it stays Standard until someone matches.
+  const pkg = await createPackage(user.id, {
+    ...parsed.data,
+    serviceLevel: chosen
+      ? serviceLevelForArrival(chosen.arriveDate ?? chosen.travelDate, todayIST())
+      : "standard",
+  });
   if (tripId) {
     if (chosen && chosen.status === "active") {
       await sendRequest({
@@ -201,7 +210,7 @@ export async function createFromExploreAction(
 
 export async function updatePackageAction(
   packageId: string,
-  input: CreatePackageInput,
+  input: CreatePackageRequest,
 ) {
   const user = await requireUser();
   const parsed = createPackageSchema.safeParse(input);
@@ -270,7 +279,6 @@ export async function updateProfileAction(
 export async function sendRequestAction(params: {
   packageId: string;
   tripId: string;
-  amount: number;
 }): Promise<ActionResult> {
   const user = await requireUser();
   const pkg = await getOwnedPackage(params.packageId, user.id);
@@ -293,7 +301,7 @@ export async function sendRequestAction(params: {
     tripId: params.tripId,
     requestedBy: user.id,
     initiatorRole: "sender",
-    amount: Math.min(params.amount, pkg.maxPrice),
+    amount: priceForTrip(pkg, trip, todayIST()).price,
   });
   revalidatePath(`/app/packages/${params.packageId}`);
   revalidatePath(`/app/packages/${params.packageId}/travelers`);
@@ -372,7 +380,7 @@ export async function offerToCarryAction(
     tripId,
     requestedBy: user.id,
     initiatorRole: "traveler",
-    amount: pkg.offerPrice,
+    amount: priceForTrip(pkg, trip, todayIST()).price,
   });
   revalidatePath(`/app/travel/trips/${tripId}/packages`);
   revalidatePath(`/app/travel/trips/${tripId}`);

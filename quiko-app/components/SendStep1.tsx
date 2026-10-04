@@ -76,7 +76,7 @@ export function SendStep1({
     // between" filter narrows it.
     const q = toSendQuery({
       from, to, timePreference: "flexible", dateFrom: today, dateTo: weekOut,
-      weightKg, serviceLevel: "standard",
+      weightKg,
     });
     router.push(`/app/send/explore?${q}`);
   }

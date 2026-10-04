@@ -85,6 +85,17 @@ body {
 .pb-safe {
   padding-bottom: max(env(safe-area-inset-bottom), 0.75rem);
 }
+/* iOS Safari/Chrome (both WebKit) in a normal tab: the floating browser toolbar
+   overlays the bottom of the page, and dvh/safe-area don't account for it, so a
+   footer button lands underneath it. Lift footers clear of the toolbar. Not in
+   an installed PWA (display-mode: standalone), which has no toolbar. */
+@supports (-webkit-touch-callout: none) {
+  @media (display-mode: browser) {
+    .pb-safe {
+      padding-bottom: calc(max(env(safe-area-inset-bottom), 0.75rem) + 4.5rem);
+    }
+  }
+}
 
 /* Range slider — themed track + thumb */
 input[type="range"] {

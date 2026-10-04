@@ -11,6 +11,8 @@
 //
 // Declared value does NOT affect price (it sets the traveler's liability cap).
 
+import { roadDistanceKm } from "./geo";
+
 export const PLATFORM_FEE = 60; // flat, added to the distance component
 
 // Progressive distance slabs: each portion of the route is charged at the rate
@@ -82,6 +84,37 @@ export interface PriceBreakdown {
   weightComponent: number;
   serviceMultiplier: number;
   maxPrice: number; // rounded ₹
+}
+
+/**
+ * The service level isn't a sender choice — it follows from how soon the chosen
+ * traveller reaches the destination: today → Express, within the next two days →
+ * Fast, three or more days out → Standard. (Flexible is no longer offered.)
+ * Dates are YYYY-MM-DD; `today` is passed in so the rule stays pure.
+ */
+export function serviceLevelForArrival(arriveDate: string, today: string): ServiceLevel {
+  const days = Math.round((Date.parse(arriveDate) - Date.parse(today)) / 864e5);
+  if (days <= 0) return "express";
+  if (days <= 2) return "fast";
+  return "standard";
+}
+
+/** The tier and price a package gets when carried by a specific trip. */
+export function priceForTrip(
+  pkg: { weightKg: number; fromLat: number; fromLng: number; toLat: number; toLng: number },
+  trip: { arriveDate?: string | null; travelDate: string },
+  today: string,
+): { serviceLevel: ServiceLevel; price: number } {
+  const serviceLevel = serviceLevelForArrival(trip.arriveDate ?? trip.travelDate, today);
+  const { maxPrice } = calculatePrice({
+    weightKg: pkg.weightKg,
+    distanceKm: roadDistanceKm(
+      { lat: pkg.fromLat, lng: pkg.fromLng },
+      { lat: pkg.toLat, lng: pkg.toLng },
+    ),
+    serviceLevel,
+  });
+  return { serviceLevel, price: maxPrice };
 }
 
 /** Compute the recommended max price plus a breakdown for the UI. */

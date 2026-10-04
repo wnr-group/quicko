@@ -7,12 +7,13 @@ import { StepHeader } from "@/components/formkit";
 import { ExploreTravelerCard } from "@/components/ExploreTravelerCard";
 import { ExploreFilters } from "@/components/ExploreFilters";
 import { ReachFilter } from "@/components/ReachFilter";
-import { ServiceLevelPicker } from "@/components/ServiceLevelPicker";
 import { ExplorePostTrigger } from "@/components/ExplorePostTrigger";
 import { getAuthUser, getProfile } from "@/lib/auth";
 
 import { exploreTrips } from "@/lib/queries/trips";
 import { parseSendParams } from "@/lib/sendParams";
+import { priceForTrip } from "@/core/pricing";
+import { todayIST } from "@/lib/dates";
 
 // Public — browse travelers without logging in.
 export default async function ExplorePage({
@@ -50,6 +51,15 @@ export default async function ExplorePage({
       return a.trip.travelDate.localeCompare(b.trip.travelDate) || (a.trip.arriveTime ?? "").localeCompare(b.trip.arriveTime ?? "");
     });
 
+  // Tier + price follow from each traveller's arrival date (today → Express,
+  // within 2 days → Fast, later → Standard) for this sender's weight and route.
+  const today = todayIST();
+  const pkgShape = {
+    weightKg: parsed.weightKg,
+    fromLat: parsed.from.lat, fromLng: parsed.from.lng,
+    toLat: parsed.to.lat, toLng: parsed.to.lng,
+  };
+
   const SORT_LABELS: Record<string, string> = {
     arrival: "earliest arrival first", departure: "earliest departure first", rating: "highest rated first", trust: "most trusted first",
   };
@@ -85,10 +95,6 @@ export default async function ExplorePage({
         </div>
 
         <Suspense fallback={null}>
-          <ServiceLevelPicker value={parsed.serviceLevel} />
-        </Suspense>
-
-        <Suspense fallback={null}>
           <ReachFilter min={parsed.dateFrom} />
         </Suspense>
 
@@ -117,6 +123,7 @@ export default async function ExplorePage({
                   key={trip.id}
                   params={effective}
                   tripId={trip.id}
+                  {...priceForTrip(pkgShape, trip, today)}
                   gate={gate}
                   profileHref={`/app/travelers/${traveler.id}`}
                   name={traveler.fullName ?? "Traveler"}

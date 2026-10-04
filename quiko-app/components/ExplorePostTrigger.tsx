@@ -2,8 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { calculatePrice } from "@/core/pricing";
-import { roadDistanceKm } from "@/core/geo";
 import { createFromExploreAction } from "@/app/app/actions";
 import type { SendParams } from "@/lib/sendParams";
 
@@ -27,19 +25,14 @@ export function ExplorePostTrigger({
     if (gate) { router.push(gate); return; }
     setError(null);
     startTransition(async () => {
-      // Price is computed for the request but never shown — the sender sees it at payment.
-      const { maxPrice } = calculatePrice({
-        weightKg: params.weightKg,
-        distanceKm: roadDistanceKm(params.from, params.to),
-        serviceLevel: params.serviceLevel,
-      });
       const res = await createFromExploreAction(
         {
           fromLabel: params.from.label, fromLat: params.from.lat, fromLng: params.from.lng,
           toLabel: params.to.label, toLat: params.to.lat, toLng: params.to.lng,
           travelDate: params.dateFrom, dateTo: params.dateTo,
           weightKg: params.weightKg, timePreference: params.timePreference,
-          serviceLevel: params.serviceLevel, offerPrice: maxPrice,
+          // The server sets the tier and price from the chosen traveller's arrival date.
+          offerPrice: 1_000_000,
         },
         tripId,
       );

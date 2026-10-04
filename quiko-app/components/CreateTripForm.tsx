@@ -8,7 +8,7 @@ import { Card, Label, FieldButton, Segmented, StepBtn, TIME_WINDOWS } from "@/co
 import { IconMapPin, IconFlag, IconPlus, IconMinus, IconArrowLeft, IconHome } from "@/components/icons";
 import { reverseGeocode } from "@/components/geocode";
 import { roadDistanceKm, type PinnedLocation } from "@/core/geo";
-import { FREE_DETOUR_KM, MAX_EXTRA_DETOUR_KM, detourFee } from "@/core/pricing";
+import { FREE_DETOUR_KM, MAX_EXTRA_DETOUR_KM } from "@/core/pricing";
 import { createTripAction } from "@/app/app/actions";
 
 const LocationSheet = dynamic(() => import("@/components/LocationSheet"), { ssr: false });
@@ -250,7 +250,6 @@ export function CreateTripForm({ today }: { today: string }) {
                     <span className="text-[13px] font-semibold text-ink">
                       Up to {totalDetourKm} km detour — first {FREE_DETOUR_KM} km free
                     </span>
-                    <span className="text-[13px] font-bold text-ink">≈ ₹{detourFee(totalDetourKm)} max</span>
                   </div>
                   {/* Shown as the total detour (2–12 km); stored as the extra
                       beyond the free 2 km, which is what the API expects (0–10). */}

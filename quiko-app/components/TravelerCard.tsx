@@ -29,7 +29,7 @@ export function TravelerCard({
   function request() {
     setError(null);
     startTransition(async () => {
-      const res = await sendRequestAction({ packageId, tripId, amount });
+      const res = await sendRequestAction({ packageId, tripId });
       if (res.ok) { setRequested(true); router.refresh(); }
       else setError(res.error);
     });

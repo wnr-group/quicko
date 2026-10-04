@@ -1,14 +1,21 @@
 import Link from "next/link";
 import { ExplorePostTrigger } from "@/components/ExplorePostTrigger";
+import { inr } from "@/core/format";
+import type { ServiceLevel } from "@/core/pricing";
 import type { SendParams } from "@/lib/sendParams";
+
+const TIER_LABEL: Record<ServiceLevel, string> = {
+  flexible: "Flexible", standard: "Standard", fast: "Fast", express: "Express",
+};
 import { initials, timeWindow, dateShort } from "@/core/format";
 import { TRANSPORT_ICONS, IconShieldCheck, IconChevronRight, IconArrowRight, IconStar } from "@/components/icons";
 
 // Discovery card: name + schedule + trust signals (no price). Tapping it requests this traveller.
 export function ExploreTravelerCard({
-  params, tripId, gate, profileHref, name, kycLevel, transport, travelDate, arriveDate, departTime, arriveTime, rating, deliveries,
+  params, tripId, gate, serviceLevel, price, profileHref, name, kycLevel, transport, travelDate, arriveDate, departTime, arriveTime, rating, deliveries,
 }: {
-  params: SendParams; tripId: string; gate: string | null; profileHref: string; name: string; kycLevel: number; transport: string;
+  params: SendParams; tripId: string; gate: string | null; serviceLevel: ServiceLevel; price: number;
+  profileHref: string; name: string; kycLevel: number; transport: string;
   travelDate: string; arriveDate?: string | null; departTime: string | null; arriveTime: string | null;
   rating: number; deliveries: number;
 }) {
@@ -39,6 +46,12 @@ export function ExploreTravelerCard({
               <div className="font-bold text-ink">{dateShort(arriveDate ?? travelDate)} · {timeWindow(arriveTime)}</div>
             </div>
           </div>
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <span className="rounded-full bg-brand px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-ink">
+            {TIER_LABEL[serviceLevel]}
+          </span>
+          <span className="text-lg font-black tabular-nums">{inr(price)}</span>
         </div>
         <IconChevronRight width={18} height={18} className="shrink-0 text-muted" />
       </ExplorePostTrigger>

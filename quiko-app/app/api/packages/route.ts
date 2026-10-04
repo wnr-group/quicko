@@ -3,6 +3,8 @@ import { getMyPackages, createPackage } from "@/lib/queries/packages";
 import { sendRequest, capacityError, selfMatchError, travellerVerificationError, spareCapacity } from "@/lib/queries/requests";
 import { getTrip } from "@/lib/queries/trips";
 import { createPackageSchema } from "@/lib/validation";
+import { serviceLevelForArrival } from "@/core/pricing";
+import { todayIST } from "@/lib/dates";
 
 export async function GET(req: Request) {
   const u = await bearerUser(req);
@@ -47,7 +49,12 @@ export async function POST(req: Request) {
     if (unverified) return bad(unverified);
   }
 
-  const pkg = await createPackage(u.id, parsed.data);
+  const pkg = await createPackage(u.id, {
+    ...parsed.data,
+    serviceLevel: chosen
+      ? serviceLevelForArrival(chosen.arriveDate ?? chosen.travelDate, todayIST())
+      : "standard",
+  });
 
   if (tripId) {
     const trip = chosen;

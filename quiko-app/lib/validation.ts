@@ -28,6 +28,8 @@ export const createPackageSchema = z
   });
 
 export type CreatePackageInput = z.infer<typeof createPackageSchema>;
+// What a client may send: serviceLevel is optional (the server derives it).
+export type CreatePackageRequest = z.input<typeof createPackageSchema>;
 
 export const createTripSchema = z
   .object({

@@ -6,7 +6,8 @@ import { matchRequests, matches, packages, trips, profiles } from "@/db/schema";
 import { notify } from "@/lib/queries/notifications";
 import { logAdminAction } from "@/lib/queries/audit";
 import { detourKm, detourTier } from "@/core/geo";
-import { detourFee } from "@/core/pricing";
+import { detourFee, priceForTrip } from "@/core/pricing";
+import { todayIST } from "@/lib/dates";
 import { VERIFIED_LEVEL } from "@/lib/queries/kyc";
 import type { Role } from "@/core/types";
 
@@ -543,7 +544,7 @@ export async function adminCreateMatch(
     const unverified = await unverifiedTravellerError(tx, trip.travelerId);
     if (unverified) return { ok: false, error: unverified };
 
-    const base = pkg.offerPrice ?? pkg.maxPrice ?? 0;
+    const base = priceForTrip(pkg, trip, todayIST()).price;
     const detour = matchDetour(pkg, trip);
     const [match] = await tx
       .insert(matches)

@@ -11,7 +11,8 @@ import { requireUser } from "@/lib/auth";
 import { getOwnedPackage } from "@/lib/queries/packages";
 import { findMatchingTrips } from "@/lib/queries/trips";
 import { getRequestedTripIds } from "@/lib/queries/requests";
-import { inr } from "@/core/format";
+import { priceForTrip } from "@/core/pricing";
+import { todayIST } from "@/lib/dates";
 
 const SORTS: Record<string, (a: { traveler: T }, b: { traveler: T }) => number> = {
   trust: (a, b) => b.traveler.trustScore - a.traveler.trustScore,
@@ -37,6 +38,7 @@ export default async function TravelersPage({
     findMatchingTrips(pkg),
     getRequestedTripIds(pkg.id),
   ]);
+  const today = todayIST();
   const trips = [...found]
     .filter(({ trip }) => (transport ? trip.transport === transport : true))
     .sort(SORTS[sort ?? "trust"] ?? SORTS.trust);
@@ -52,10 +54,7 @@ export default async function TravelersPage({
             <IconArrowRight width={15} height={15} className="text-muted" />
             <span>{pkg.toCity}</span>
           </div>
-          <div className="text-[13px] text-muted">
-            {pkg.weightKg}kg · offering{" "}
-            <span className="font-bold text-ink">{inr(pkg.offerPrice)}</span>
-          </div>
+          <div className="text-[13px] text-muted">{pkg.weightKg}kg</div>
         </div>
 
         {found.length === 0 ? (
@@ -87,7 +86,7 @@ export default async function TravelersPage({
                       key={trip.id}
                       packageId={pkg.id}
                       tripId={trip.id}
-                      amount={pkg.offerPrice}
+                      amount={priceForTrip(pkg, trip, today).price}
                       name={traveler.fullName ?? "Traveler"}
                       rating={traveler.ratingAvg}
                       deliveries={traveler.deliveriesCount}
