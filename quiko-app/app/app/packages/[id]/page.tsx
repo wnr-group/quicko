@@ -21,12 +21,6 @@ const SERVICE_LABELS: Record<string, string> = {
   express: "Express",
 };
 
-const SPEED_LABELS: Record<string, string> = {
-  same_day: "Same day",
-  next_day: "Next day",
-  flexible: "Flexible",
-};
-
 export default async function PackageDetailPage({
   params,
 }: {
@@ -89,11 +83,9 @@ export default async function PackageDetailPage({
             }
           />
 
-          <dl className="mt-4 grid grid-cols-3 gap-2">
+          <dl className="mt-4 grid grid-cols-2 gap-2">
             <Detail k="Weight" v={`${pkg.weightKg} kg`} />
-            <Detail k="Arrival" v={SPEED_LABELS[pkg.timePreference] ?? pkg.timePreference} />
             <Detail k="Service" v={SERVICE_LABELS[pkg.serviceLevel] ?? pkg.serviceLevel} />
-            <Detail k="Your offer" v={inr(pkg.offerPrice)} />
           </dl>
         </div>
 
