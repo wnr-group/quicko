@@ -43,3 +43,13 @@ export async function signOutAction() {
   await destroySession();
   redirect("/");
 }
+
+// Onboarding is the first place a mistyped number shows up (a new number means a
+// new, nameless profile). Drop that session and go back to the phone step so the
+// user can fix the number or sign in to the account they already have.
+export async function changeNumberAction(formData: FormData) {
+  await destroySession();
+  const next = String(formData.get("next") ?? "");
+  const safe = next.startsWith("/") && !next.startsWith("//") ? next : "";
+  redirect(safe ? `/login?next=${encodeURIComponent(safe)}` : "/login");
+}

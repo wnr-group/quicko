@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui";
 import { completeOnboardingAction } from "@/app/onboarding/actions";
+import { changeNumberAction } from "@/app/login/actions";
 import { formatPhone, initials } from "@/core/format";
 
 export function OnboardingForm({
@@ -70,6 +71,15 @@ export function OnboardingForm({
         <Button onClick={submit} disabled={pending || fullName.trim().length < 2 || !emailOk}>
           {pending ? "Saving…" : "Continue"}
         </Button>
+
+        {/* A mistyped number lands here as a brand-new account — let them go back. */}
+        <form action={changeNumberAction} className="mt-2 text-center">
+          <input type="hidden" name="next" value={next ?? ""} />
+          <p className="text-[13px] text-muted">Wrong number, or already have an account?</p>
+          <button type="submit" className="mt-1 py-1 text-sm font-bold text-ink underline underline-offset-2">
+            Edit mobile number / sign in
+          </button>
+        </form>
       </div>
     </div>
   );

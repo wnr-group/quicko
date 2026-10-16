@@ -105,7 +105,7 @@ export function LoginForm({ next }: { next?: string }) {
               onClick={() => setStep("phone")}
               className="py-2 text-sm font-semibold text-muted"
             >
-              ← Change number
+              Wrong number? Edit mobile number
             </button>
           </>
         )}
