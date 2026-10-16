@@ -299,6 +299,37 @@ structural fix:
 
 ---
 
+## 8d. The demo WILL pause itself — Supabase free tier
+
+**Supabase pauses a free project after ~7 days of inactivity.** The demo sat
+idle for about three weeks and paused, which looks like this:
+
+- `https://<ref>.supabase.co` and `db.<ref>.supabase.co` stop resolving
+  (**NXDOMAIN**) — DNS is withdrawn for a paused project, so NXDOMAIN does *not*
+  by itself mean the project was deleted.
+- The pooler still resolves and accepts TCP, but every connection is refused
+  with `XX000 (ENOTFOUND) tenant/user postgres.<ref> not found`.
+
+**Recovery:** restore the project from the Supabase dashboard. Data and schema
+survive (verified after the restore: all 16 tables, all 18 migrations). The
+`DATABASE_URL` does not change, and no redeploy is needed. Note the pooler
+lags DNS — Supavisor kept returning "tenant not found" for **~2 minutes** after
+the project was back; just wait and retry.
+
+**Why it looked like "the whole app is 500ing".** Static pages (`/`, `/login`
+for a signed-out visitor) kept working, so the site looked half-up. But
+`app/login/page.tsx` called `getProfile()` — a DB read — to skip login for
+already-signed-in users, which meant a dead database **500'd the login page for
+exactly the people holding a session cookie**, locking them out of the one
+screen that could have cleared it. That lookup is now wrapped in try/catch and
+falls through to the form (verified: cookie + unreachable DB was 500, now 200
+with the form; behaviour with a healthy DB is unchanged).
+
+To stop the demo pausing, either keep a trivial cron hitting the DB weekly, or
+move it to a host without inactivity pausing (see the Neon note in §8c).
+
+---
+
 ## 9. Running locally (for contrast)
 
 - DB: local Postgres via Docker — `cd quiko-app && npm run db:up` (host port `5433`).
