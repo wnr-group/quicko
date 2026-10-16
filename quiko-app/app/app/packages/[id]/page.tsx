@@ -23,10 +23,13 @@ const SERVICE_LABELS: Record<string, string> = {
 
 export default async function PackageDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ new?: string }>;
 }) {
   const { id } = await params;
+  const { new: justPosted } = await searchParams;
   const user = await requireUser();
   const pkg = await getOwnedPackage(id, user.id);
   if (!pkg) notFound();
@@ -53,7 +56,8 @@ export default async function PackageDetailPage({
 
   return (
     <PhoneFrame>
-      <TopBar title="Package" back />
+      {/* Just posted: Back goes Home, not back into the finished form. */}
+      <TopBar title="Package" back backHref={justPosted ? "/app" : undefined} />
       <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-8">
         {/* Summary — yellow fill marks this page as a PACKAGE; the trip page
             uses a black-outlined white hero so the two never read alike. */}

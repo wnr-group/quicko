@@ -7,14 +7,13 @@ import { Button } from "@/components/ui";
 import { Card, Label, FieldButton, StepBtn, StepHeader } from "@/components/formkit";
 import { IconMapPin, IconFlag, IconPlus, IconMinus } from "@/components/icons";
 import { reverseGeocode } from "@/components/geocode";
-import { toSendQuery } from "@/lib/sendParams";
+import { toSendQuery, SEND_STORE_KEY } from "@/lib/sendParams";
 import type { PinnedLocation } from "@/core/geo";
 
 const LocationSheet = dynamic(() => import("@/components/LocationSheet"), { ssr: false });
 
-// Persist the route/timing across the send flow so returning to this step
+// The route/weight are persisted (SEND_STORE_KEY) so returning to this step
 // (back from Explore) restores what the user already picked.
-const STORE_KEY = "quiko_send_step1";
 
 export function SendStep1({
   today, weekOut,
@@ -31,7 +30,7 @@ export function SendStep1({
     // Restore a previous selection (e.g. after tapping back from Explore) so the
     // pickup/destination and weight the user already chose aren't lost.
     try {
-      const raw = sessionStorage.getItem(STORE_KEY);
+      const raw = sessionStorage.getItem(SEND_STORE_KEY);
       if (raw) {
         const s = JSON.parse(raw) as Partial<{
           from: PinnedLocation; to: PinnedLocation;
@@ -70,7 +69,7 @@ export function SendStep1({
   function explore() {
     if (!from || !to) return;
     try {
-      sessionStorage.setItem(STORE_KEY, JSON.stringify({ from, to, weightKg }));
+      sessionStorage.setItem(SEND_STORE_KEY, JSON.stringify({ from, to, weightKg }));
     } catch {}
     // No timing choice on this step: look a week ahead; Explore's "Should reach
     // between" filter narrows it.

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import {
   createPackageSchema,
@@ -155,7 +155,8 @@ export async function createPackageAction(input: CreatePackageRequest) {
   }
   const pkg = await createPackage(user.id, parsed.data);
   revalidatePath("/app");
-  redirect(`/app/packages/${pkg.id}/travelers`);
+  // replace, not push: Back must not return to the finished form to post it again.
+  redirect(`/app/packages/${pkg.id}/travelers`, RedirectType.replace);
 }
 
 // Explore-first: create the package with the details, then either request the
@@ -205,7 +206,7 @@ export async function createFromExploreAction(
     await notifyMatchesForNewPackage(pkg);
   }
   revalidatePath("/app");
-  redirect(`/app/packages/${pkg.id}`);
+  redirect(`/app/packages/${pkg.id}?new=1`, RedirectType.replace);
 }
 
 export async function updatePackageAction(
@@ -234,7 +235,7 @@ export async function updatePackageAction(
   }
   revalidatePath("/app");
   revalidatePath(`/app/packages/${packageId}`);
-  redirect(`/app/packages/${packageId}`);
+  redirect(`/app/packages/${packageId}`, RedirectType.replace);
 }
 
 export async function deletePackageAction(packageId: string): Promise<ActionResult> {
@@ -320,7 +321,7 @@ export async function createTripAction(input: CreateTripInput) {
   // Auto-match: alert senders of open packages already waiting on this route.
   await notifyMatchesForNewTrip(trip);
   revalidatePath("/app/travel");
-  redirect(`/app/travel/trips/${trip.id}`);
+  redirect(`/app/travel/trips/${trip.id}?new=1`, RedirectType.replace);
 }
 
 export async function deleteTripAction(tripId: string): Promise<ActionResult> {

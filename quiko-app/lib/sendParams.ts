@@ -11,6 +11,9 @@ export type SendParams = {
   weightKg: number;
 };
 
+// sessionStorage key for the step-1 selection (route + weight), so Back from Explore restores it.
+export const SEND_STORE_KEY = "quiko_send_step1";
+
 export function parseSendParams(
   sp: Record<string, string | string[] | undefined>,
 ): SendParams | null {

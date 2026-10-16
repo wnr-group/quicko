@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createFromExploreAction } from "@/app/app/actions";
-import type { SendParams } from "@/lib/sendParams";
+import { SEND_STORE_KEY, type SendParams } from "@/lib/sendParams";
 
 // Step 2 is the last step: tapping a traveller (or "notify me") posts the package
 // right here. Signed-out / unregistered users are sent to `gate` (login or
@@ -24,6 +24,14 @@ export function ExplorePostTrigger({
   function post() {
     if (gate) { router.push(gate); return; }
     setError(null);
+    // Once posted, Back must not lead to a pre-filled form that posts it again:
+    // clear the step-1 selection now (success redirects away and never returns
+    // here) and put it back if the post fails.
+    let saved: string | null = null;
+    try {
+      saved = sessionStorage.getItem(SEND_STORE_KEY);
+      sessionStorage.removeItem(SEND_STORE_KEY);
+    } catch {}
     startTransition(async () => {
       const res = await createFromExploreAction(
         {
@@ -36,7 +44,10 @@ export function ExplorePostTrigger({
         },
         tripId,
       );
-      if (res && !res.ok) setError(res.error);
+      if (res && !res.ok) {
+        setError(res.error);
+        try { if (saved) sessionStorage.setItem(SEND_STORE_KEY, saved); } catch {}
+      }
     });
   }
 

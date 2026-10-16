@@ -17,10 +17,13 @@ import { inr, dateShort, timeWindow, initials, timeAgo, placeShort } from "@/cor
 
 export default async function TripDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ new?: string }>;
 }) {
   const { id } = await params;
+  const { new: justPosted } = await searchParams;
   const user = await requireUser();
   const trip = await getOwnedTrip(id, user.id);
   if (!trip) notFound();
@@ -41,7 +44,8 @@ export default async function TripDetailPage({
 
   return (
     <PhoneFrame>
-      <TopBar title="Trip" back />
+      {/* Just posted: Back goes Home, not back into the finished form. */}
+      <TopBar title="Trip" back backHref={justPosted ? "/app" : undefined} />
       <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-8">
         {/* Summary */}
         <div className="rounded-3xl border-2 border-ink bg-canvas p-5">

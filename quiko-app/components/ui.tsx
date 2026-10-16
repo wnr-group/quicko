@@ -37,11 +37,14 @@ export function Button({
 export function TopBar({
   title,
   back,
+  backHref,
   action,
   home = true,
 }: {
   title: string;
   back?: boolean;
+  /** Where the back arrow goes instead of the previous history entry (e.g. Home after posting). */
+  backHref?: string;
   action?: ReactNode;
   /** Show a one-tap Home button on the right so users never have to press back repeatedly. */
   home?: boolean;
@@ -51,7 +54,7 @@ export function TopBar({
     <header className="pt-safe sticky top-0 z-20 flex items-center gap-3 border-b border-line bg-canvas/90 px-4 pb-3 backdrop-blur-md">
       {back && (
         <button
-          onClick={() => router.back()}
+          onClick={() => (backHref ? router.replace(backHref) : router.back())}
           aria-label="Go back"
           className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line-strong bg-canvas text-ink transition-colors active:scale-95 hover:bg-brand-soft"
         >
