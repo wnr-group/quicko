@@ -3,6 +3,16 @@ import { and, asc, desc, eq, gte, inArray, lte, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { trips, profiles, matches, packages } from "@/db/schema";
 import { routeMatches } from "@/core/geo";
+import { VERIFIED_LEVEL } from "@/lib/queries/kyc";
+
+// Only travellers who can actually accept are discoverable: registered (finished
+// onboarding, so they have a name) and KYC-verified. Accepting needs this anyway
+// (see verificationError), so listing anyone else just leads senders to a dead end.
+const canAccept = and(
+  eq(profiles.status, "active"), // no suspended travellers
+  gte(profiles.kycLevel, VERIFIED_LEVEL),
+  sql`coalesce(trim(${profiles.fullName}), '') <> ''`,
+);
 
 /**
  * Discovery-first: travelers on a route within a date window, WITHOUT a weight
@@ -37,9 +47,9 @@ export async function exploreTrips(params: {
         gte(trips.travelDate, params.dateFrom),
         lte(trips.travelDate, params.dateTo),
         eq(trips.status, "active"),
-        // A suspended traveller can't accept, pick up or deliver — keep their
-        // trips out of discovery so nobody requests (and pays for) a dead end.
-        eq(profiles.status, "active"),
+        // Suspended, unregistered or unverified travellers can't accept — keep
+        // them out of discovery so nobody requests (and pays for) a dead end.
+        canAccept,
       ),
     )
     .orderBy(asc(trips.travelDate), asc(trips.arriveTime));
@@ -105,7 +115,7 @@ export async function findMatchingTrips(pkg: {
         lte(trips.travelDate, pkg.dateTo ?? pkg.travelDate),
         eq(trips.status, "active"),
         gte(spareKg, pkg.weightKg),
-        eq(profiles.status, "active"), // no suspended travellers
+        canAccept, // registered + verified, not suspended
         ne(trips.travelerId, pkg.senderId), // you can't carry your own package
       ),
     )
