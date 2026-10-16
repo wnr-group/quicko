@@ -70,6 +70,45 @@ body {
   font-family: var(--font-sans);
 }
 
+/* Press feedback — every tappable thing visibly reacts the instant it's touched.
+   Buttons shrink a touch and darken; links/cards (which can be large, or inline
+   text) only darken. In @layer base so a component's own utilities still win. */
+@layer base {
+  button,
+  a[href],
+  [role="button"],
+  summary {
+    -webkit-tap-highlight-color: transparent; /* replace iOS's grey flash with our own */
+    touch-action: manipulation; /* no 300ms tap delay / double-tap zoom */
+    transition:
+      transform 120ms ease,
+      filter 120ms ease,
+      opacity 120ms ease,
+      background-color 150ms ease,
+      color 150ms ease,
+      box-shadow 150ms ease;
+  }
+  button:not(:disabled):active,
+  [role="button"]:active {
+    transform: scale(0.97);
+    filter: brightness(0.92);
+  }
+  a[href]:active,
+  summary:active {
+    filter: brightness(0.92);
+    opacity: 0.85;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    button:not(:disabled):active,
+    [role="button"]:active {
+      transform: none;
+    }
+  }
+}
+
 /* Hide scrollbars inside the app frame (native-app feel) */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
