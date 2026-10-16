@@ -9,15 +9,17 @@ import { TRANSPORT_ICONS_SOLID } from "@/components/icons";
 import { requireUser } from "@/lib/auth";
 import { getMyTrips } from "@/lib/queries/trips";
 import { getTravelerMatches, getTravelerWallet, countActiveMatches } from "@/lib/queries/matches";
+import { unreadMessageCount } from "@/lib/queries/notifications";
 import { dateShort, timeWindow, inr, placeShort } from "@/core/format";
 
 export default async function TravelHome() {
   const user = await requireUser();
-  const [trips, carrying, wallet, matchCount] = await Promise.all([
+  const [trips, carrying, wallet, matchCount, messageCount] = await Promise.all([
     getMyTrips(user.id),
     getTravelerMatches(user.id),
     getTravelerWallet(user.id),
     countActiveMatches(user.id),
+    unreadMessageCount(user.id),
   ]);
   const active = carrying.filter(
     (c) => c.match.status !== "completed" && c.match.status !== "cancelled",
@@ -128,7 +130,7 @@ export default async function TravelHome() {
         )}
       </main>
 
-      <BottomNav matchCount={matchCount} />
+      <BottomNav matchCount={matchCount} messageCount={messageCount} />
     </PhoneFrame>
   );
 }

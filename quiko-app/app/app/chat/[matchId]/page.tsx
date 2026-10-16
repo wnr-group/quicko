@@ -11,6 +11,8 @@ import { ReportUser } from "@/components/ReportUser";
 import { IconArrowRight, IconMapPin } from "@/components/icons";
 import { requireUser } from "@/lib/auth";
 import { getMatchThread } from "@/lib/queries/messages";
+import { unreadMessagesByMatch } from "@/lib/queries/notifications";
+import { MarkChatRead } from "@/components/MarkChatRead";
 
 function msgTime(d: Date) {
   return new Date(d).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
@@ -45,6 +47,7 @@ export default async function ChatPage({
   const user = await requireUser();
   const thread = await getMatchThread(matchId, user.id);
   if (!thread) notFound();
+  const unread = (await unreadMessagesByMatch(user.id))[matchId] ?? 0;
 
   const name = thread.counterpart.fullName ?? "Your match";
   // I'm the sender => they carry it, and the record I care about is my package.
@@ -56,6 +59,7 @@ export default async function ChatPage({
 
   return (
     <PhoneFrame>
+      <MarkChatRead matchId={matchId} hasUnread={unread > 0} />
       <TopBar title={name} back action={<ReportUser reportedUserId={thread.counterpart.id} matchId={matchId} />} />
 
       {/* Who this is and which delivery it concerns — a chat with no context

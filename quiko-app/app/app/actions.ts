@@ -45,7 +45,7 @@ import {
   cancelMatchAsParticipant,
 } from "@/lib/queries/matches";
 import { getTrip, getOwnedTrip, createTrip, deleteTrip } from "@/lib/queries/trips";
-import { markAllRead } from "@/lib/queries/notifications";
+import { markChatRead, markAllRead } from "@/lib/queries/notifications";
 import { sendMessage, sendLocationMessage } from "@/lib/queries/messages";
 import { submitKyc, approveKyc, rejectKyc } from "@/lib/queries/kyc";
 import { postUserSupportMessage, postStaffReply, setSupportThreadStatus, setMySupportStatus } from "@/lib/queries/support";
@@ -434,6 +434,14 @@ export async function withdrawRequestAction(
 export async function getIncomingAction() {
   const user = await requireUser();
   return getIncomingForUser(user.id);
+}
+
+// Opening a chat clears its unread badge.
+export async function markChatReadAction(matchId: string): Promise<ActionResult> {
+  const user = await requireUser();
+  await markChatRead(user.id, matchId);
+  revalidatePath("/app/messages");
+  return { ok: true };
 }
 
 // ---- Notifications ----

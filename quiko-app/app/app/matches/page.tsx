@@ -7,12 +7,14 @@ import { RouteCard } from "@/components/RouteCard";
 import { IconSparkles, IconPackage, IconPlane } from "@/components/icons";
 import { requireUser } from "@/lib/auth";
 import { getUserMatches, countActiveMatches } from "@/lib/queries/matches";
+import { unreadMessageCount } from "@/lib/queries/notifications";
 
 export default async function MatchesPage() {
   const user = await requireUser();
-  const [rows, active] = await Promise.all([
+  const [rows, active, messageCount] = await Promise.all([
     getUserMatches(user.id),
     countActiveMatches(user.id),
+    unreadMessageCount(user.id),
   ]);
 
   return (
@@ -68,7 +70,7 @@ export default async function MatchesPage() {
         )}
       </main>
 
-      <BottomNav matchCount={active} />
+      <BottomNav matchCount={active} messageCount={messageCount} />
     </PhoneFrame>
   );
 }

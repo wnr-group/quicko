@@ -1,10 +1,11 @@
 import "server-only";
-import { asc, eq } from "drizzle-orm";
+import { asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { messages, matches, packages, profiles } from "@/db/schema";
 import { notify } from "@/lib/queries/notifications";
 import { containsPhoneNumber } from "@/core/moderation";
 import { autoFlagContact } from "@/lib/queries/reports";
+import { getUserMatches } from "@/lib/queries/matches";
 
 type Result<T> = { ok: true; value: T } | { ok: false; error: string };
 
@@ -122,4 +123,35 @@ export async function sendLocationMessage(
     });
     return { ok: true, value: { id: row.id } };
   });
+}
+
+/**
+ * The Messages tab: one row per match (so per person you're dealing with), newest
+ * activity first, each with its last message. Cancelled matches only appear if
+ * they have a conversation worth keeping.
+ */
+export async function getConversations(userId: string) {
+  const rows = await getUserMatches(userId);
+  if (rows.length === 0) return [];
+  const last = await db
+    .selectDistinctOn([messages.matchId], {
+      matchId: messages.matchId,
+      senderId: messages.senderId,
+      body: messages.body,
+      locationLabel: messages.locationLabel,
+      createdAt: messages.createdAt,
+    })
+    .from(messages)
+    .where(inArray(messages.matchId, rows.map((r) => r.match.id)))
+    .orderBy(messages.matchId, desc(messages.createdAt));
+  const lastBy = new Map(last.map((m) => [m.matchId, m]));
+
+  return rows
+    .map((r) => ({ ...r, last: lastBy.get(r.match.id) ?? null }))
+    .filter((r) => r.last || r.match.status !== "cancelled")
+    .sort(
+      (a, b) =>
+        (b.last?.createdAt ?? b.match.updatedAt ?? new Date(0)).getTime() -
+        (a.last?.createdAt ?? a.match.updatedAt ?? new Date(0)).getTime(),
+    );
 }

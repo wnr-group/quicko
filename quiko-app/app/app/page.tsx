@@ -9,16 +9,18 @@ import { requireUser, getProfile } from "@/lib/auth";
 import { getMyPackages } from "@/lib/queries/packages";
 import { countActiveMatches } from "@/lib/queries/matches";
 import { getIncomingForUser } from "@/lib/queries/requests";
+import { unreadMessageCount } from "@/lib/queries/notifications";
 import { IncomingRequestsPopup } from "@/components/IncomingRequestsPopup";
 import { inr, formatPhone, initials, placeShort, dateShort } from "@/core/format";
 
 export default async function AppHome() {
   const user = await requireUser();
-  const [profile, myPackages, matchCount, incoming] = await Promise.all([
+  const [profile, myPackages, matchCount, incoming, messageCount] = await Promise.all([
     getProfile(),
     getMyPackages(user.id),
     countActiveMatches(user.id),
     getIncomingForUser(user.id),
+    unreadMessageCount(user.id),
   ]);
 
   return (
@@ -27,9 +29,11 @@ export default async function AppHome() {
       <header className="pt-safe rounded-b-3xl bg-brand px-5 pb-7">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="grid h-11 w-11 place-items-center rounded-full bg-ink text-sm font-bold text-brand">
+            {/* Profile lives behind the avatar now (it's no longer a tab). */}
+            <Link href="/app/profile" aria-label="Open your profile"
+              className="grid h-11 w-11 place-items-center rounded-full bg-ink text-sm font-bold text-brand shadow-card">
               {initials(profile?.fullName, "Q")}
-            </span>
+            </Link>
             <div>
               <p className="text-[13px] font-semibold text-ink-soft">Welcome back</p>
               <h1 className="text-[19px] font-bold leading-tight tracking-tight text-ink">
@@ -100,7 +104,7 @@ export default async function AppHome() {
         )}
       </main>
 
-      <BottomNav matchCount={matchCount} />
+      <BottomNav matchCount={matchCount} messageCount={messageCount} />
       {/* Anything waiting on my answer pops up here, for senders and travellers alike. */}
       <IncomingRequestsPopup initial={incoming} />
     </PhoneFrame>

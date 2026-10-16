@@ -9,15 +9,17 @@ import { getMyPackages } from "@/lib/queries/packages";
 import { countActiveMatches } from "@/lib/queries/matches";
 import { getMyKyc } from "@/lib/queries/kyc";
 import { signOutAction } from "@/app/login/actions";
+import { unreadMessageCount } from "@/lib/queries/notifications";
 import { formatPhone, initials } from "@/core/format";
 
 export default async function ProfilePage() {
   const user = await requireUser();
-  const [profile, myPackages, matchCount, kyc] = await Promise.all([
+  const [profile, myPackages, matchCount, kyc, messageCount] = await Promise.all([
     getProfile(),
     getMyPackages(user.id),
     countActiveMatches(user.id),
     getMyKyc(user.id),
+    unreadMessageCount(user.id),
   ]);
   const name = profile?.fullName ?? "You";
 
@@ -104,7 +106,7 @@ export default async function ProfilePage() {
         </div>
       </main>
 
-      <BottomNav matchCount={matchCount} />
+      <BottomNav matchCount={matchCount} messageCount={messageCount} />
     </PhoneFrame>
   );
 }

@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconHome, IconPlus, IconUser, IconSparkles } from "@/components/icons";
+import { IconHome, IconPlus, IconChat, IconSparkles } from "@/components/icons";
 
 // Native-style bottom tab bar for the top-level app screens.
-export function BottomNav({ matchCount = 0 }: { matchCount?: number }) {
+export function BottomNav({ matchCount = 0, messageCount = 0 }: { matchCount?: number; messageCount?: number }) {
   const path = usePathname();
   const isHome = path === "/app";
   const isMatches = path.startsWith("/app/matches");
-  const isProfile = path.startsWith("/app/profile");
+  // Profile isn't a tab: it opens from the avatar on the home header.
+  const isMessages = path.startsWith("/app/messages");
 
   return (
     <nav className="pb-safe sticky bottom-0 z-20 mt-auto flex items-center justify-around border-t border-line bg-canvas/95 px-5 pt-2 backdrop-blur-md">
@@ -32,8 +33,8 @@ export function BottomNav({ matchCount = 0 }: { matchCount?: number }) {
         <IconSparkles />
       </Tab>
 
-      <Tab href="/app/profile" active={isProfile} label="Profile">
-        <IconUser />
+      <Tab href="/app/messages" active={isMessages} label="Messages" badge={messageCount}>
+        <IconChat />
       </Tab>
     </nav>
   );
