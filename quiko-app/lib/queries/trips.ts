@@ -220,3 +220,19 @@ export async function deleteTrip(id: string, travelerId: string) {
     .returning();
   return row ?? null;
 }
+
+/** The traveller's still-open trips that haven't arrived yet — used to ask
+ *  "open the one you have, or plan another?" before starting a new trip. */
+export async function getMyActiveTrips(travelerId: string, today: string) {
+  return db
+    .select()
+    .from(trips)
+    .where(
+      and(
+        eq(trips.travelerId, travelerId),
+        eq(trips.status, "active"),
+        sql`coalesce(${trips.arriveDate}, ${trips.travelDate}) >= ${today}`,
+      ),
+    )
+    .orderBy(desc(trips.travelDate));
+}

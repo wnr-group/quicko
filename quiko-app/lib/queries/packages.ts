@@ -216,3 +216,19 @@ export async function deletePackage(id: string, senderId: string) {
     .returning();
   return row ?? null;
 }
+
+/** The sender's still-open packages whose date window hasn't passed — used to ask
+ *  "edit the one you have, or post another?" before starting a new send. */
+export async function getMyActivePackages(senderId: string, today: string) {
+  return db
+    .select()
+    .from(packages)
+    .where(
+      and(
+        eq(packages.senderId, senderId),
+        eq(packages.status, "active"),
+        sql`coalesce(${packages.dateTo}, ${packages.travelDate}) >= ${today}`,
+      ),
+    )
+    .orderBy(desc(packages.createdAt));
+}
