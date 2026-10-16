@@ -324,6 +324,48 @@ export async function declineRequest(requestId: string, travelerId: string): Pro
 }
 
 /**
+ * Whoever SENT a pending request (a sender requesting a traveller, or a
+ * traveller offering to carry) can take it back before the other side answers.
+ * The other party is told, and the request drops out of their queue.
+ */
+export async function withdrawRequest(requestId: string, userId: string): Promise<Result> {
+  return db.transaction(async (tx) => {
+    const [req] = await tx.select().from(matchRequests).where(eq(matchRequests.id, requestId)).limit(1);
+    if (!req || req.requestedBy !== userId) return { ok: false, error: "Request not found" };
+    if (req.status !== "pending") {
+      return { ok: false, error: "This request has already been answered, so it can't be withdrawn." };
+    }
+    await tx
+      .update(matchRequests)
+      .set({ status: "cancelled", updatedAt: new Date() })
+      .where(eq(matchRequests.id, requestId));
+
+    const [pkg] = await tx.select().from(packages).where(eq(packages.id, req.packageId)).limit(1);
+    const [trip] = req.tripId
+      ? await tx.select().from(trips).where(eq(trips.id, req.tripId)).limit(1)
+      : [undefined];
+    if (req.initiatorRole === "sender" && trip) {
+      await notify(tx, {
+        profileId: trip.travelerId,
+        type: "withdrawn",
+        title: "Request withdrawn",
+        body: "A sender withdrew their request.",
+        href: `/app/travel/trips/${trip.id}`,
+      });
+    } else if (req.initiatorRole === "traveler" && pkg) {
+      await notify(tx, {
+        profileId: pkg.senderId,
+        type: "withdrawn",
+        title: "Offer withdrawn",
+        body: "A traveller withdrew their offer to carry your package.",
+        href: `/app/packages/${pkg.id}`,
+      });
+    }
+    return { ok: true };
+  });
+}
+
+/**
  * Traveler accepts a request → confirm a match, atomically. Verifies the trip
  * belongs to the traveler, marks the request accepted, the package + trip
  * matched, declines competing requests, and mints a delivery OTP.

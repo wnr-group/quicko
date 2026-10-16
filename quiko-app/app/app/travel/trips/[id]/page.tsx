@@ -7,6 +7,7 @@ import { RequestActions } from "@/components/RequestActions";
 import { TravelerMatchFlow } from "@/components/TravelerMatchFlow";
 import { KindChip, RouteTimeline } from "@/components/RouteCard";
 import { CancelTripButton } from "@/components/CancelTripButton";
+import { WithdrawRequestButton } from "@/components/WithdrawRequestButton";
 import { TRANSPORT_ICONS_SOLID, IconArrowRight, IconStar, IconPackage, IconChevronRight } from "@/components/icons";
 import { requireUser } from "@/lib/auth";
 import { getOwnedTrip } from "@/lib/queries/trips";
@@ -174,6 +175,10 @@ export default async function TripDetailPage({
                   </div>
                   <div className="mt-2 rounded-xl bg-surface px-3 py-2 text-[13px] font-medium text-muted">
                     Offer sent to {sender.fullName ?? "the sender"} — waiting for them to accept.
+                  </div>
+                  <div className="mt-3">
+                    <WithdrawRequestButton requestId={request.id} packageId={pkg.id}
+                      tripId={trip.id} label="Withdraw offer" />
                   </div>
                 </div>
               ))}

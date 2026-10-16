@@ -5,6 +5,7 @@ import { TopBar } from "@/components/ui";
 import { StatusBadge } from "@/components/StatusBadge";
 import { RouteTimeline } from "@/components/RouteCard";
 import { DeletePackageButton } from "@/components/DeletePackageButton";
+import { WithdrawRequestButton } from "@/components/WithdrawRequestButton";
 import { SenderRequestActions } from "@/components/SenderRequestActions";
 import { MatchFlow } from "@/components/MatchFlow";
 import { IconChevronRight, IconPackage, IconPlane, IconEdit, TRANSPORT_ICONS } from "@/components/icons";
@@ -212,18 +213,27 @@ export default async function PackageDetailPage({
                 {sent.map(({ request, traveler }) => (
                   <li
                     key={request.id}
-                    className="flex items-center gap-3 rounded-2xl bg-canvas p-3.5 shadow-card"
+                    className="rounded-2xl bg-canvas p-3.5 shadow-card"
                   >
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ink text-xs font-bold text-brand">
-                      {initials(traveler?.fullName)}
-                    </span>
-                    <div className="flex-1">
-                      <div className="text-[15px] font-bold">
-                        {traveler?.fullName ?? "Traveler"}
+                    <div className="flex items-center gap-3">
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ink text-xs font-bold text-brand">
+                        {initials(traveler?.fullName)}
+                      </span>
+                      <div className="flex-1">
+                        <div className="text-[15px] font-bold">
+                          {traveler?.fullName ?? "Traveler"}
+                        </div>
+                        <div className="text-[13px] text-muted">{inr(request.amount)}</div>
                       </div>
-                      <div className="text-[13px] text-muted">{inr(request.amount)}</div>
+                      <StatusBadge status={request.status} />
                     </div>
-                    <StatusBadge status={request.status} />
+                    {/* A request you sent can be taken back until the traveller answers. */}
+                    {request.status === "pending" && request.initiatorRole === "sender" && (
+                      <div className="mt-3 border-t border-line pt-3">
+                        <WithdrawRequestButton requestId={request.id} packageId={pkg.id}
+                          tripId={request.tripId ?? undefined} label="Withdraw request" />
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>

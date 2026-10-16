@@ -27,6 +27,7 @@ import {
   declineRequest,
   acceptOfferAsSender,
   declineOfferAsSender,
+  withdrawRequest,
   adminCreateMatch,
   capacityError,
   selfMatchError,
@@ -410,6 +411,21 @@ export async function declineOfferAction(
   const user = await requireUser();
   const res = await declineOfferAsSender(requestId, user.id);
   if (res.ok) revalidatePackage(packageId);
+  return res;
+}
+
+// Withdraw a request/offer you sent (sender or traveller) while it's still pending.
+export async function withdrawRequestAction(
+  requestId: string,
+  packageId: string,
+  tripId?: string,
+): Promise<ActionResult> {
+  const user = await requireUser();
+  const res = await withdrawRequest(requestId, user.id);
+  if (res.ok) {
+    revalidatePackage(packageId);
+    if (tripId) revalidateTraveler(tripId, packageId);
+  }
   return res;
 }
 
