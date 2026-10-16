@@ -28,6 +28,7 @@ import {
   acceptOfferAsSender,
   declineOfferAsSender,
   withdrawRequest,
+  getIncomingForUser,
   adminCreateMatch,
   capacityError,
   selfMatchError,
@@ -427,6 +428,12 @@ export async function withdrawRequestAction(
     if (tripId) revalidateTraveler(tripId, packageId);
   }
   return res;
+}
+
+// Polled by the main-page pop-up to pick up requests that arrived while it's open.
+export async function getIncomingAction() {
+  const user = await requireUser();
+  return getIncomingForUser(user.id);
 }
 
 // ---- Notifications ----

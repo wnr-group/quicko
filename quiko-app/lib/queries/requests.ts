@@ -298,6 +298,77 @@ export async function getRequestsForTrip(tripId: string) {
     .orderBy(desc(matchRequests.createdAt));
 }
 
+/** One thing waiting for the user's answer, for the main-page pop-up. */
+export type IncomingItem = {
+  id: string; // request id
+  kind: "request" | "offer"; // request: a sender asks me to carry · offer: a traveller offers to carry mine
+  packageId: string;
+  tripId: string;
+  who: string; // the other person
+  from: string;
+  to: string;
+  weightKg: number;
+  amount: number;
+  when: string; // YYYY-MM-DD (trip date)
+  createdAt: string;
+};
+
+/**
+ * Everything awaiting my answer: requests senders sent to my trips, plus offers
+ * travellers made on my packages. Only live ones (package + trip still active).
+ */
+export async function getIncomingForUser(userId: string): Promise<IncomingItem[]> {
+  const [asTraveller, asSender] = await Promise.all([
+    db
+      .select({ request: matchRequests, trip: trips, pkg: packages, name: profiles.fullName })
+      .from(matchRequests)
+      .innerJoin(trips, eq(matchRequests.tripId, trips.id))
+      .innerJoin(packages, eq(matchRequests.packageId, packages.id))
+      .innerJoin(profiles, eq(packages.senderId, profiles.id))
+      .where(
+        and(
+          eq(trips.travelerId, userId),
+          eq(matchRequests.status, "pending"),
+          eq(matchRequests.initiatorRole, "sender"),
+          eq(packages.status, "active"),
+          eq(trips.status, "active"),
+        ),
+      ),
+    db
+      .select({ request: matchRequests, trip: trips, pkg: packages, name: profiles.fullName })
+      .from(matchRequests)
+      .innerJoin(packages, eq(matchRequests.packageId, packages.id))
+      .innerJoin(trips, eq(matchRequests.tripId, trips.id))
+      .innerJoin(profiles, eq(trips.travelerId, profiles.id))
+      .where(
+        and(
+          eq(packages.senderId, userId),
+          eq(matchRequests.status, "pending"),
+          eq(matchRequests.initiatorRole, "traveler"),
+          eq(packages.status, "active"),
+          eq(trips.status, "active"),
+        ),
+      ),
+  ]);
+  const toItem = (kind: IncomingItem["kind"]) =>
+    (r: (typeof asTraveller)[number]): IncomingItem => ({
+      id: r.request.id,
+      kind,
+      packageId: r.pkg.id,
+      tripId: r.trip.id,
+      who: r.name ?? (kind === "request" ? "A sender" : "A traveller"),
+      from: r.pkg.fromCity,
+      to: r.pkg.toCity,
+      weightKg: r.pkg.weightKg,
+      amount: r.request.counterAmount ?? r.request.amount,
+      when: r.trip.travelDate,
+      createdAt: r.request.createdAt.toISOString(),
+    });
+  return [...asTraveller.map(toItem("request")), ...asSender.map(toItem("offer"))].sort(
+    (a, b) => b.createdAt.localeCompare(a.createdAt),
+  );
+}
+
 type Result = { ok: true } | { ok: false; error: string };
 
 /** Traveler declines a request on their trip. */

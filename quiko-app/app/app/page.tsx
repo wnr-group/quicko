@@ -8,14 +8,17 @@ import { IconPackage, IconPlane, IconChevronRight } from "@/components/icons";
 import { requireUser, getProfile } from "@/lib/auth";
 import { getMyPackages } from "@/lib/queries/packages";
 import { countActiveMatches } from "@/lib/queries/matches";
+import { getIncomingForUser } from "@/lib/queries/requests";
+import { IncomingRequestsPopup } from "@/components/IncomingRequestsPopup";
 import { inr, formatPhone, initials, placeShort, dateShort } from "@/core/format";
 
 export default async function AppHome() {
   const user = await requireUser();
-  const [profile, myPackages, matchCount] = await Promise.all([
+  const [profile, myPackages, matchCount, incoming] = await Promise.all([
     getProfile(),
     getMyPackages(user.id),
     countActiveMatches(user.id),
+    getIncomingForUser(user.id),
   ]);
 
   return (
@@ -98,6 +101,8 @@ export default async function AppHome() {
       </main>
 
       <BottomNav matchCount={matchCount} />
+      {/* Anything waiting on my answer pops up here, for senders and travellers alike. */}
+      <IncomingRequestsPopup initial={incoming} />
     </PhoneFrame>
   );
 }
