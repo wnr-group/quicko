@@ -31,8 +31,8 @@ async function storeDel(k: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 const BASE =
-  (Constants.expoConfig?.extra?.apiUrl as string | undefined) ??
   process.env.EXPO_PUBLIC_API_URL ??
+  (Constants.expoConfig?.extra?.apiUrl as string | undefined) ??
   "http://localhost:3000";
 
 const MOCK = (process.env.EXPO_PUBLIC_MOCK ?? "true") !== "false";
