@@ -34,7 +34,6 @@ type Feature = {
     coordinates?: {
       latitude: number;
       longitude: number;
-      routable_points?: { latitude: number; longitude: number }[];
     };
   };
 };
@@ -50,11 +49,11 @@ function labelOf(f: Feature): string {
 function toPlace(f: Feature): Place | null {
   const c = f.properties?.coordinates;
   const g = f.geometry?.coordinates;
-  // Prefer the routable point (the road access of an address) over the building
-  // centroid, so routes start/end where a vehicle actually goes — as Google does.
-  const rp = c?.routable_points?.[0];
-  const lat = rp?.latitude ?? c?.latitude ?? g?.[1];
-  const lng = rp?.longitude ?? c?.longitude ?? g?.[0];
+  // The place's own coordinates, so the pin sits on the shop/house/building the
+  // user searched for. (routable_points are road-access points in front of it;
+  // the Directions API snaps to the road itself, so routes are unaffected.)
+  const lat = c?.latitude ?? g?.[1];
+  const lng = c?.longitude ?? g?.[0];
   if (lat == null || lng == null) return null;
   return { lat, lng, label: labelOf(f) || coordFallback(lat, lng) };
 }
