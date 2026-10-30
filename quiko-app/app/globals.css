@@ -122,10 +122,12 @@ body {
 .app-frame-h {
   height: 100vh;
   height: 100dvh;
+  height: var(--app-h, 100dvh); /* real visible height, set by ViewportHeight */
 }
 .app-frame-min-h {
   min-height: 100vh;
   min-height: 100dvh;
+  min-height: var(--app-h, 100dvh);
 }
 
 /* Safe-area helpers for standalone PWA */
