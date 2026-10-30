@@ -1,9 +1,21 @@
 import Link from "next/link";
 import Image from "next/image";
+import { redirect } from "next/navigation";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { IconMapPin, IconPackage } from "@/components/icons";
+import { getProfile } from "@/lib/auth";
 
-export default function SplashPage() {
+export default async function SplashPage() {
+  // Already signed in → skip the splash. Never let a lookup failure (e.g. the
+  // database being down) block the page: fall through and show the splash.
+  let signedIn = false;
+  try {
+    signedIn = !!(await getProfile());
+  } catch (e) {
+    console.error("[splash] profile lookup failed, showing the splash anyway:", e);
+  }
+  if (signedIn) redirect("/app");
+
   return (
     <PhoneFrame>
       <div className="flex flex-1 flex-col bg-brand px-7 pt-safe">
