@@ -72,9 +72,9 @@ export function SendStep1({
   }
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <StepHeader step={1} total={2} label="Route & weight" />
-      <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-5">
+      <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5">
         <Card>
           <Label>Where are you sending?</Label>
           <div className="overflow-hidden rounded-2xl border border-line-strong bg-canvas">
@@ -109,7 +109,7 @@ export function SendStep1({
         </Card>
       </div>
 
-      <div className="pb-safe border-t border-line bg-canvas px-5 pt-3">
+      <div className="pb-safe shrink-0 border-t border-line bg-canvas px-5 pt-3">
         <Button variant="brand" onClick={explore} disabled={!ready}>
           {!from || !to ? "Set pickup & destination" : "Explore travellers"}
         </Button>

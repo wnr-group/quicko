@@ -26,7 +26,7 @@ export function RouteMap({
   from,
   to,
   packageStops,
-  heightClass = "h-56",
+  heightClass = "h-40 [@media(min-height:720px)]:h-56",
 }: {
   from: LatLng | null;
   to: LatLng | null;

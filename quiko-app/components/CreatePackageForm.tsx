@@ -107,8 +107,8 @@ export function CreatePackageForm({
   }
 
   return (
-    <div className="flex flex-1 flex-col">
-      <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-5">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5">
         {/* Route */}
         <Card>
           <Label>Where are you sending?</Label>
@@ -184,7 +184,7 @@ export function CreatePackageForm({
         {error && <p className="mt-4 rounded-xl bg-error-soft px-3 py-2 text-sm font-medium text-error">{error}</p>}
       </div>
 
-      <div className="pb-safe border-t border-line bg-white px-5 pt-3">
+      <div className="pb-safe shrink-0 border-t border-line bg-white px-5 pt-3">
         <Button variant="brand" onClick={submit} disabled={!ready || pending}>
           {pending
             ? "Saving…"
