@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { MAPBOX_STYLE, MAPBOX_TOKEN } from "@/lib/maps";
+import { enrichBaseMap } from "@/lib/mapStyle";
 import { boundsOf, type LngLat } from "@/core/routeCorridor";
 import type { LatLng } from "@/core/geo";
 
@@ -64,7 +65,10 @@ export default function MapCanvas({
       cooperativeGestures: false,
     });
     m.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
-    m.on("load", () => setReady(true));
+    m.on("load", () => {
+      enrichBaseMap(m);
+      setReady(true);
+    });
     m.on("error", (e) => {
       // Tile/style errors (bad token, offline) — surface once, don't spam.
       if ((e.error as { status?: number } | undefined)?.status === 401) onError?.();
