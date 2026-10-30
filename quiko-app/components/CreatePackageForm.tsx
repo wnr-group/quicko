@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { Button } from "@/components/ui";
 import { IconMapPin, IconFlag, IconChevronRight, IconPlus, IconMinus } from "@/components/icons";
 import { calculatePrice } from "@/core/pricing";
+import { digitsOnly, PHONE_MAX } from "@/lib/validation";
 import { roadDistanceKm, type PinnedLocation } from "@/core/geo";
 import { reverseGeocode } from "@/components/geocode";
 import type { TimePreference } from "@/core/types";
@@ -141,8 +142,8 @@ export function CreatePackageForm({
             <input value={receiverName} onChange={(e) => setReceiverName(e.target.value)}
               placeholder="Receiver's name" maxLength={60}
               className="w-full rounded-xl border border-line bg-white px-3.5 py-3 text-[15px] outline-none focus:border-ink" />
-            <input value={receiverPhone} onChange={(e) => setReceiverPhone(e.target.value)}
-              inputMode="tel" placeholder="Receiver's phone"
+            <input value={receiverPhone} onChange={(e) => setReceiverPhone(digitsOnly(e.target.value))}
+              inputMode="numeric" pattern="[0-9]*" maxLength={PHONE_MAX} placeholder="Receiver's phone"
               className="mt-2 w-full rounded-xl border border-line bg-white px-3.5 py-3 text-[15px] outline-none focus:border-ink" />
           </Card>
         )}

@@ -1,5 +1,14 @@
 import { z } from "zod";
 
+export const PHONE_MIN = 10;
+export const PHONE_MAX = 15;
+
+/** For phone inputs' onChange: keep digits only, capped at PHONE_MAX. */
+export const digitsOnly = (s: string) => s.replace(/\D/g, "").slice(0, PHONE_MAX);
+
+/** Digits only, PHONE_MIN–PHONE_MAX long. No letters, spaces or symbols. */
+export const isValidPhone = (s: string) => new RegExp(`^\\d{${PHONE_MIN},${PHONE_MAX}}$`).test(s);
+
 export const createPackageSchema = z
   .object({
     fromLabel: z.string().min(1, "Set a pickup location").max(120),
@@ -17,8 +26,8 @@ export const createPackageSchema = z
     receiverName: z.string().trim().min(2).max(60).optional(),
     receiverPhone: z
       .string()
-      .transform((s) => s.replace(/\D/g, ""))
-      .refine((p) => p.length === 0 || (p.length >= 10 && p.length <= 15), "Enter a valid receiver phone")
+      .trim()
+      .refine((p) => p.length === 0 || isValidPhone(p), "Receiver phone must be 10–15 digits, numbers only")
       .optional(),
     offerPrice: z.number().int().positive(),
   })

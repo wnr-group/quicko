@@ -7,6 +7,7 @@ import {
   createPackageSchema,
   createTripSchema,
   profileSchema,
+  isValidPhone,
   type CreatePackageRequest,
   type CreateTripInput,
 } from "@/lib/validation";
@@ -255,9 +256,9 @@ export async function setReceiverAction(
 ): Promise<ActionResult> {
   const user = await requireUser();
   const n = name.trim();
-  const p = phone.replace(/\D/g, "");
+  const p = phone.trim();
   if (n.length < 2) return { ok: false, error: "Enter the receiver's name" };
-  if (p.length < 10) return { ok: false, error: "Enter a valid receiver phone" };
+  if (!isValidPhone(p)) return { ok: false, error: "Receiver phone must be 10–15 digits, numbers only" };
   const row = await setPackageReceiver(packageId, user.id, n, p);
   if (!row) return { ok: false, error: "Package not found" };
   revalidatePackage(packageId);
