@@ -139,7 +139,7 @@ export function CreateTripForm({ today }: { today: string }) {
             <Card>
               <Label>Departure</Label>
               <div className="flex items-end gap-2">
-                <label className="min-w-0 flex-[1.3]">
+                <label className="min-w-0 flex-1">
                   <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-muted">Date</span>
                   <input type="date" value={departDate} min={today}
                     onChange={(e) => {
@@ -151,7 +151,7 @@ export function CreateTripForm({ today }: { today: string }) {
                 <label className="min-w-0 flex-1">
                   <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-muted">Window</span>
                   <select value={departTime} onChange={(e) => setDepartTime(e.target.value)}
-                    className="w-full min-w-0 rounded-xl border border-line-strong bg-canvas px-3 py-2.5 text-[15px] outline-none focus:border-ink">
+                    className="w-full min-w-0 appearance-none rounded-xl border border-line-strong bg-canvas bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2214%22 height=%2214%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22m6 9 6 6 6-6%22/></svg>')] bg-[length:14px] bg-[right_0.75rem_center] bg-no-repeat py-2.5 pl-3 pr-9 text-[15px] outline-none focus:border-ink">
                     {TIME_WINDOWS.map((w) => <option key={w.value} value={w.value}>{w.label}</option>)}
                   </select>
                 </label>
@@ -161,7 +161,7 @@ export function CreateTripForm({ today }: { today: string }) {
             <Card>
               <Label>Arrival</Label>
               <div className="flex items-end gap-2">
-                <label className="min-w-0 flex-[1.3]">
+                <label className="min-w-0 flex-1">
                   <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-muted">Date</span>
                   <input type="date" value={arriveDate} min={departDate} onChange={(e) => setArriveDate(e.target.value)}
                     className="w-full min-w-0 rounded-xl border border-line-strong bg-canvas px-3 py-2.5 text-[15px] outline-none focus:border-ink" />
@@ -169,7 +169,7 @@ export function CreateTripForm({ today }: { today: string }) {
                 <label className="min-w-0 flex-1">
                   <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-muted">Window</span>
                   <select value={arriveTime} onChange={(e) => setArriveTime(e.target.value)}
-                    className="w-full min-w-0 rounded-xl border border-line-strong bg-canvas px-3 py-2.5 text-[15px] outline-none focus:border-ink">
+                    className="w-full min-w-0 appearance-none rounded-xl border border-line-strong bg-canvas bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2214%22 height=%2214%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22m6 9 6 6 6-6%22/></svg>')] bg-[length:14px] bg-[right_0.75rem_center] bg-no-repeat py-2.5 pl-3 pr-9 text-[15px] outline-none focus:border-ink">
                     {TIME_WINDOWS.map((w) => <option key={w.value} value={w.value}>{w.label}</option>)}
                   </select>
                 </label>
