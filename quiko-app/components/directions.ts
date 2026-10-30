@@ -1,4 +1,5 @@
-// Mapbox Directions API v5 — road route between two points, with the polyline
+// Mapbox Directions API v5 (driving-traffic: the traffic-aware fastest route,
+// the same kind of route Google Maps picks) — road route between two points, with the polyline
 // geometry, distance and duration. Cached per (from,to) so the preview map
 // doesn't re-request when a form re-renders.
 import { MAPBOX_TOKEN } from "@/lib/maps";
@@ -16,7 +17,8 @@ export type RouteResult =
   | { ok: false; reason: "no-token" | "no-route" | "failed" };
 
 const cache = new Map<string, RouteResult>();
-const k = (p: LatLng) => `${p.lng.toFixed(4)},${p.lat.toFixed(4)}`;
+// 6 decimals (~0.1 m): rounding the endpoints is itself a source of distance error.
+const k = (p: LatLng) => `${p.lng.toFixed(6)},${p.lat.toFixed(6)}`;
 
 export async function fetchRoute(
   from: LatLng,
@@ -29,7 +31,7 @@ export async function fetchRoute(
   if (hit) return hit;
   try {
     const r = await fetch(
-      `https://api.mapbox.com/directions/v5/mapbox/driving/${key}` +
+      `https://api.mapbox.com/directions/v5/mapbox/driving-traffic/${key}` +
         `?geometries=geojson&overview=full&access_token=${MAPBOX_TOKEN}`,
       { signal },
     );
@@ -47,7 +49,7 @@ export async function fetchRoute(
       ok: true,
       route: {
         geometry: best.geometry.coordinates,
-        distanceKm: best.distance / 1000,
+        distanceKm: best.distance / 1000, // metres → km; rounded only for display
         durationMin: Math.round(best.duration / 60),
       },
     };
