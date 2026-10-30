@@ -4,7 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { PinnedLocation } from "@/core/geo";
-import { endSearchSession, reverseGeocode, searchPlaces, type Place } from "@/components/geocode";
+import {
+  endSearchSession, retrievePlace, reverseGeocode, searchPlaces, type Place, type Suggestion,
+} from "@/components/geocode";
+import { parseMapsInput } from "@/core/mapsLink";
 import { MAPBOX_STYLE, MAPBOX_TOKEN, mapboxConfigured } from "@/lib/maps";
 import { IconArrowLeft, IconSearch, IconLocate, IconX, IconMapPin } from "@/components/icons";
 
@@ -38,7 +41,9 @@ export default function LocationSheet({
   const [sel, setSel] = useState<PinnedLocation>(start);
   const [labelBusy, setLabelBusy] = useState(false);
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Place[]>([]);
+  const [results, setResults] = useState<Suggestion[]>([]);
+  // "reading" while a pasted link is resolved; an error string if it can't be.
+  const [paste, setPaste] = useState<"reading" | string | null>(null);
   const revTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function scheduleReverse(lat: number, lng: number) {
@@ -107,10 +112,41 @@ export default function LocationSheet({
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults([]);
       setSearching(false);
+      setPaste(null);
       return;
     }
-    setSearching(true);
     const ctl = new AbortController();
+
+    // A pasted Google Maps link or "lat, lng" is a location, not a search.
+    const pasted = parseMapsInput(q);
+    if (pasted) {
+      setResults([]);
+      setSearching(false);
+      setPaste("reading");
+      (async () => {
+        try {
+          let loc: { lat: number; lng: number; name?: string } | null = null;
+          if (pasted.kind === "coords") loc = pasted;
+          else {
+            const r = await fetch(`/api/maps/resolve?url=${encodeURIComponent(pasted.url)}`, { signal: ctl.signal });
+            const d = await r.json();
+            if (!r.ok) throw new Error(d.error || "Couldn't read that link.");
+            loc = d;
+          }
+          if (!loc || ctl.signal.aborted) return;
+          const label = loc.name || (await reverseGeocode(loc.lat, loc.lng));
+          if (ctl.signal.aborted) return;
+          setPaste(null);
+          pick({ lat: loc.lat, lng: loc.lng, label });
+        } catch (e) {
+          if (!ctl.signal.aborted) setPaste(e instanceof Error ? e.message : "Couldn't read that link.");
+        }
+      })();
+      return () => ctl.abort();
+    }
+
+    setPaste(null);
+    setSearching(true);
     const t = setTimeout(async () => {
       const c = map?.getCenter();
       const r = await searchPlaces(q, {
@@ -126,6 +162,17 @@ export default function LocationSheet({
       ctl.abort();
     };
   }, [query, map]);
+
+  async function pickSuggestion(sg: Suggestion) {
+    setSearching(true);
+    const p = await retrievePlace(sg);
+    setSearching(false);
+    if (!p) {
+      setNotice("Couldn't load that place. Try another result.");
+      return;
+    }
+    pick(p);
+  }
 
   function pick(p: Place) {
     setSel(p);
@@ -166,7 +213,7 @@ export default function LocationSheet({
             <IconSearch width={17} height={17} />
           </span>
           <input value={query} onChange={(e) => setQuery(e.target.value)} autoFocus={false}
-            placeholder="Search area, locality, landmark…"
+            placeholder="Search shop, street, landmark — or paste a Google Maps link"
             className="w-full rounded-xl border border-line bg-white py-3 pl-9 pr-10 text-[14px] outline-none focus:border-ink" />
           {query && (
             <button onClick={() => { setQuery(""); setResults([]); }}
@@ -174,19 +221,27 @@ export default function LocationSheet({
               <IconX width={16} height={16} />
             </button>
           )}
-          {query.trim().length >= 3 && !searching && results.length === 0 && (
+          {paste && (
+            <div className="absolute z-[600] mt-1 w-full rounded-xl border border-line bg-white px-3 py-3 text-[14px] text-muted shadow-pop">
+              {paste === "reading" ? "Reading location from link…" : paste}
+            </div>
+          )}
+          {!paste && query.trim().length >= 3 && !searching && results.length === 0 && (
             <div className="absolute z-[600] mt-1 w-full rounded-xl border border-line bg-white px-3 py-3 text-[14px] text-muted shadow-pop">
               No places found. Try a nearby landmark or locality.
             </div>
           )}
           {results.length > 0 && (
             <ul className="absolute z-[600] mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-line bg-white py-1 shadow-pop">
-              {results.map((r, i) => (
-                <li key={i}>
-                  <button onClick={() => pick(r)}
+              {results.map((r) => (
+                <li key={r.id}>
+                  <button onClick={() => pickSuggestion(r)}
                     className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-[14px] hover:bg-brand-soft">
                     <IconMapPin width={15} height={15} className="shrink-0 text-muted" />
-                    <span className="line-clamp-2">{r.label}</span>
+                    <span className="min-w-0">
+                      <span className="line-clamp-1 font-semibold">{r.label}</span>
+                      {r.detail && <span className="line-clamp-1 text-[12px] text-muted">{r.detail}</span>}
+                    </span>
                   </button>
                 </li>
               ))}

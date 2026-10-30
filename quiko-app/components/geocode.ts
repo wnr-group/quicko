@@ -79,30 +79,67 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string> 
   }
 }
 
+export type Suggestion = { id: string; label: string; detail: string };
+
+const SEARCH = "https://api.mapbox.com/search/searchbox/v1";
+
+type SbSuggestion = {
+  mapbox_id: string;
+  name?: string;
+  name_preferred?: string;
+  address?: string;
+  full_address?: string;
+  place_formatted?: string;
+};
+
 /**
- * Autocomplete search, biased toward `near` when given. Returns [] on failure
- * or abort; pass a signal to cancel a superseded request.
+ * Autocomplete via the Search Box API, which — unlike plain geocoding — also
+ * finds shops, businesses and landmarks, not just streets and areas. Suggestions
+ * carry no coordinates; call retrievePlace() on the one the user picks.
+ * Biased toward `near`. Returns [] on failure or abort.
  */
 export async function searchPlaces(
   q: string,
   opts: { near?: { lat: number; lng: number }; signal?: AbortSignal } = {},
-): Promise<Place[]> {
+): Promise<Suggestion[]> {
   const query = q.trim();
   if (!MAPBOX_TOKEN || query.length < 3) return [];
   const prox = opts.near ? `&proximity=${opts.near.lng},${opts.near.lat}` : "";
   const url =
-    `${BASE}/forward?q=${encodeURIComponent(query)}&country=${MAPBOX_COUNTRY}&language=en` +
-    `&autocomplete=true&limit=6&session_token=${session}${prox}&access_token=${MAPBOX_TOKEN}`;
+    `${SEARCH}/suggest?q=${encodeURIComponent(query)}&country=${MAPBOX_COUNTRY}&language=en` +
+    `&limit=8&session_token=${session}${prox}&access_token=${MAPBOX_TOKEN}`;
   try {
     const hit = cache.get(`s:${url}`);
-    if (hit) return (await hit) as Place[];
+    if (hit) return (await hit) as Suggestion[];
     const r = await fetch(url, { signal: opts.signal });
     if (!r.ok) return [];
-    const d = (await r.json()) as { features?: Feature[] };
-    const places = (d.features ?? []).map(toPlace).filter((p): p is Place => p !== null);
-    cache.set(`s:${url}`, Promise.resolve(places));
-    return places;
+    const d = (await r.json()) as { suggestions?: SbSuggestion[] };
+    const out = (d.suggestions ?? []).map((x) => ({
+      id: x.mapbox_id,
+      label: x.name_preferred || x.name || "",
+      // Street/area line shown under the name, so two branches of one store differ.
+      detail: x.address && x.place_formatted ? `${x.address}, ${x.place_formatted}` : (x.full_address || x.place_formatted || ""),
+    })).filter((x) => x.id && x.label);
+    cache.set(`s:${url}`, Promise.resolve(out));
+    return out;
   } catch {
     return [];
+  }
+}
+
+/** Coordinates for a picked suggestion (this closes the billing session). */
+export async function retrievePlace(s: Suggestion, signal?: AbortSignal): Promise<Place | null> {
+  if (!MAPBOX_TOKEN) return null;
+  try {
+    const r = await fetch(
+      `${SEARCH}/retrieve/${encodeURIComponent(s.id)}?session_token=${session}&access_token=${MAPBOX_TOKEN}`,
+      { signal },
+    );
+    if (!r.ok) return null;
+    const d = (await r.json()) as { features?: Feature[] };
+    const f = d.features?.[0];
+    return f ? toPlace(f) : null;
+  } catch {
+    return null;
   }
 }
