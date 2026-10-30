@@ -1,24 +1,21 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Map as LeafletMap } from "leaflet";
-import "leaflet/dist/leaflet.css";
-import { MapContainer, TileLayer, useMapEvents } from "react-leaflet";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 import type { PinnedLocation } from "@/core/geo";
-import { reverseGeocode, searchPlaces, type Place } from "@/components/geocode";
-import { tileConfig } from "@/lib/maps";
+import { endSearchSession, reverseGeocode, searchPlaces, type Place } from "@/components/geocode";
+import { MAPBOX_STYLE, MAPBOX_TOKEN, mapboxConfigured } from "@/lib/maps";
 import { IconArrowLeft, IconSearch, IconLocate, IconX, IconMapPin } from "@/components/icons";
 
 const DEFAULT: PinnedLocation = { lat: 13.0827, lng: 80.2707, label: "Chennai" };
 
-function MoveTracker({ onMove }: { onMove: (lat: number, lng: number) => void }) {
-  const map = useMapEvents({
-    moveend: () => {
-      const c = map.getCenter();
-      onMove(c.lat, c.lng);
-    },
-  });
-  return null;
+function geoMessage(err: GeolocationPositionError | null): string {
+  if (!err) return "Location isn't available on this device.";
+  if (err.code === err.PERMISSION_DENIED)
+    return "Location permission is off. Allow it in your browser settings, or search for a place.";
+  if (err.code === err.TIMEOUT) return "Couldn't get your location in time. Try again or search.";
+  return "Your location is unavailable right now. Search for a place instead.";
 }
 
 export default function LocationSheet({
@@ -33,7 +30,11 @@ export default function LocationSheet({
   onClose: () => void;
 }) {
   const start = initial ?? DEFAULT;
-  const [map, setMap] = useState<LeafletMap | null>(null);
+  const box = useRef<HTMLDivElement>(null);
+  const [map, setMap] = useState<mapboxgl.Map | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [searching, setSearching] = useState(false);
   const [sel, setSel] = useState<PinnedLocation>(start);
   const [labelBusy, setLabelBusy] = useState(false);
   const [query, setQuery] = useState("");
@@ -50,51 +51,99 @@ export default function LocationSheet({
     }, 350);
   }
 
-  // If we opened without a starting pin, try current location.
+  // Create the map once; the pin is fixed at the centre, so a pan = a new pick.
   useEffect(() => {
-    if (initial || !("geolocation" in navigator)) return;
+    if (!box.current || !mapboxConfigured()) return;
+    mapboxgl.accessToken = MAPBOX_TOKEN;
+    const m = new mapboxgl.Map({
+      container: box.current,
+      style: MAPBOX_STYLE,
+      center: [start.lng, start.lat],
+      zoom: 14,
+    });
+    m.on("moveend", () => {
+      const c = m.getCenter();
+      scheduleReverse(c.lat, c.lng);
+    });
+    m.on("load", () => {
+      setMap(m);
+      // No starting pin → try current location (quietly; the button is explicit).
+      if (!initial) locate(true, m);
+    });
+    return () => {
+      if (revTimer.current) clearTimeout(revTimer.current);
+      m.remove();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function locate(silent: boolean, m: mapboxgl.Map | null = map) {
+    if (!("geolocation" in navigator)) {
+      if (!silent) setNotice(geoMessage(null));
+      return;
+    }
+    setLocating(true);
+    setNotice(null);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude: lat, longitude: lng } = pos.coords;
-        map?.flyTo([lat, lng], 15);
+        setLocating(false);
+        m?.flyTo({ center: [lng, lat], zoom: 15 });
         setSel({ lat, lng, label: "Current location" });
         scheduleReverse(lat, lng);
       },
-      () => {},
+      (err) => {
+        setLocating(false);
+        if (!silent) setNotice(geoMessage(err));
+      },
       { enableHighAccuracy: true, timeout: 8000 },
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map]);
+  }
 
-  // Debounced place search.
+  // Debounced autocomplete; a newer keystroke aborts the older request.
   useEffect(() => {
+    const q = query.trim();
+    if (q.length < 3) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setResults([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    const ctl = new AbortController();
     const t = setTimeout(async () => {
-      const q = query.trim();
-      setResults(q.length < 3 ? [] : await searchPlaces(q));
+      const c = map?.getCenter();
+      const r = await searchPlaces(q, {
+        near: c ? { lat: c.lat, lng: c.lng } : undefined,
+        signal: ctl.signal,
+      });
+      if (ctl.signal.aborted) return;
+      setResults(r);
+      setSearching(false);
     }, 300);
-    return () => clearTimeout(t);
-  }, [query]);
+    return () => {
+      clearTimeout(t);
+      ctl.abort();
+    };
+  }, [query, map]);
 
   function pick(p: Place) {
     setSel(p);
     setQuery("");
     setResults([]);
-    map?.flyTo([p.lat, p.lng], 15);
+    endSearchSession();
+    // The fly-to ends in a moveend that would reverse-geocode the centre and
+    // replace the label the user just picked — cancel that and keep theirs.
+    if (revTimer.current) clearTimeout(revTimer.current);
+    map?.once("moveend", () => {
+      if (revTimer.current) clearTimeout(revTimer.current);
+      setLabelBusy(false);
+      setSel(p);
+    });
+    map?.flyTo({ center: [p.lng, p.lat], zoom: 15 });
   }
 
-  function locateMe() {
-    if (!("geolocation" in navigator)) return;
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude: lat, longitude: lng } = pos.coords;
-        map?.flyTo([lat, lng], 15);
-        setSel({ lat, lng, label: "Current location" });
-        scheduleReverse(lat, lng);
-      },
-      () => {},
-      { enableHighAccuracy: true, timeout: 8000 },
-    );
-  }
+  const locateMe = () => locate(false);
 
   const isFrom = which === "from";
 
@@ -125,6 +174,11 @@ export default function LocationSheet({
               <IconX width={16} height={16} />
             </button>
           )}
+          {query.trim().length >= 3 && !searching && results.length === 0 && (
+            <div className="absolute z-[600] mt-1 w-full rounded-xl border border-line bg-white px-3 py-3 text-[14px] text-muted shadow-pop">
+              No places found. Try a nearby landmark or locality.
+            </div>
+          )}
           {results.length > 0 && (
             <ul className="absolute z-[600] mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-line bg-white py-1 shadow-pop">
               {results.map((r, i) => (
@@ -143,11 +197,13 @@ export default function LocationSheet({
 
       {/* Map with fixed center pin */}
       <div className="relative min-h-0 flex-1">
-        <MapContainer ref={setMap} center={[start.lat, start.lng]} zoom={14}
-          zoomControl={false} style={{ height: "100%", width: "100%" }}>
-          <TileLayer attribution={tileConfig().attribution} url={tileConfig().url} />
-          <MoveTracker onMove={scheduleReverse} />
-        </MapContainer>
+        {mapboxConfigured() ? (
+          <div ref={box} className="h-full w-full" />
+        ) : (
+          <div className="grid h-full place-items-center p-6 text-center text-sm text-muted">
+            Map unavailable — set NEXT_PUBLIC_MAPBOX_TOKEN to enable maps and search.
+          </div>
+        )}
 
         {/* Center pin (fixed over map) */}
         <div className="pointer-events-none absolute left-1/2 top-1/2 z-[500] -translate-x-1/2 -translate-y-full">
@@ -158,10 +214,18 @@ export default function LocationSheet({
           </svg>
         </div>
 
-        <button onClick={locateMe} aria-label="Use current location"
-          className="absolute bottom-4 right-4 z-[500] grid h-11 w-11 place-items-center rounded-full bg-white text-ink shadow-pop active:scale-95">
+        <button onClick={locateMe} aria-label="Use current location" disabled={locating}
+          className={`absolute bottom-4 right-4 z-[500] grid h-11 w-11 place-items-center rounded-full bg-white text-ink shadow-pop active:scale-95 ${locating ? "animate-pulse" : ""}`}>
           <IconLocate />
         </button>
+        {notice && (
+          <div role="alert" className="absolute inset-x-3 top-3 z-[500] flex items-start gap-2 rounded-xl bg-white px-3 py-2.5 text-[13px] font-medium shadow-pop">
+            <span className="flex-1">{notice}</span>
+            <button onClick={() => setNotice(null)} aria-label="Dismiss" className="shrink-0 text-muted">
+              <IconX width={15} height={15} />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Confirm bar */}

@@ -12,13 +12,21 @@ const context = await browser.newContext({
   permissions: ["geolocation"],
   geolocation: { latitude: 13.0827, longitude: 80.2707 },
 });
-context.route(/nominatim\.openstreetmap\.org\/reverse/, (route) => {
-  const lat = parseFloat(new URL(route.request().url()).searchParams.get("lat"));
-  const body = lat > 16 ? { address: { suburb: "Bandra", city: "Mumbai" } } : { address: { suburb: "T. Nagar", city: "Chennai" } };
-  route.fulfill({ contentType: "application/json", body: JSON.stringify(body) });
+// Mapbox Geocoding v6 mocked (coord-aware) for determinism.
+const feat = (name, place, lat, lng) => ({
+  geometry: { coordinates: [lng, lat] },
+  properties: { name, place_formatted: place, coordinates: { latitude: lat, longitude: lng } },
 });
-context.route(/nominatim\.openstreetmap\.org\/search/, (route) =>
-  route.fulfill({ contentType: "application/json", body: JSON.stringify([{ lat: "19.0760", lon: "72.8777", display_name: "Mumbai", address: { city: "Mumbai", state: "Maharashtra" } }]) }),
+context.route(/api.mapbox.com/search/geocode/v6/reverse/, (route) => {
+  const lat = parseFloat(new URL(route.request().url()).searchParams.get("latitude"));
+  const f = lat > 16 ? feat("Bandra", "Mumbai", lat, 72.83) : feat("T. Nagar", "Chennai", lat, 80.23);
+  route.fulfill({ contentType: "application/json", body: JSON.stringify({ features: [f] }) });
+});
+context.route(/api.mapbox.com/search/geocode/v6/forward/, (route) =>
+  route.fulfill({ contentType: "application/json", body: JSON.stringify({ features: [
+    feat("Mumbai", "Maharashtra", 19.076, 72.8777),
+    feat("Colaba", "Mumbai", 18.922, 72.8347),
+  ] }) }),
 );
 const page = await context.newPage();
 page.setDefaultTimeout(15000);

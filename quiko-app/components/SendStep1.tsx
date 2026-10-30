@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
+import { PickupHint } from "@/components/PickupHint";
+import { RouteMap } from "@/components/RouteMap";
 import { Button } from "@/components/ui";
 import { Card, Label, FieldButton, StepBtn, StepHeader } from "@/components/formkit";
 import { IconMapPin, IconFlag, IconPlus, IconMinus } from "@/components/icons";
-import { reverseGeocode } from "@/components/geocode";
+import { useDefaultPickup } from "@/components/useDefaultPickup";
 import { toSendQuery, SEND_STORE_KEY } from "@/lib/sendParams";
 import type { PinnedLocation } from "@/core/geo";
 
@@ -25,6 +27,7 @@ export function SendStep1({
   const [to, setTo] = useState<PinnedLocation | null>(null);
   const [sheet, setSheet] = useState<"from" | "to" | null>(null);
   const [weightKg, setWeightKg] = useState(1);
+  const [restored, setRestored] = useState(false);
 
   useEffect(() => {
     // Restore a previous selection (e.g. after tapping back from Explore) so the
@@ -43,26 +46,14 @@ export function SendStep1({
         if (s.to) setTo(s.to);
         if (s.weightKg) setWeightKg(s.weightKg);
         /* eslint-enable react-hooks/set-state-in-effect */
-        if (s.from) return; // had a pickup already → don't override with geolocation
       }
     } catch {}
-
-    if (from || !("geolocation" in navigator)) return;
-    let cancelled = false;
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude: lat, longitude: lng } = pos.coords;
-        if (cancelled) return;
-        setFrom({ lat, lng, label: "Current location" });
-        const label = await reverseGeocode(lat, lng);
-        if (!cancelled) setFrom({ lat, lng, label });
-      },
-      () => {},
-      { enableHighAccuracy: true, timeout: 8000 },
-    );
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setRestored(true);
   }, []);
+
+  const fromRef = useRef(from);
+  useEffect(() => { fromRef.current = from; });
+  const pickup = useDefaultPickup(restored, () => !fromRef.current, setFrom);
 
   const ready = !!from && !!to;
 
@@ -95,6 +86,10 @@ export function SendStep1({
               label="Destination" value={to?.label} placeholder="Where to?"
               onClick={() => setSheet("to")} />
           </div>
+          <PickupHint status={pickup.status} message={pickup.message} retry={pickup.retry} hasPickup={!!from} />
+          {from && to && (
+            <div className="mt-3"><RouteMap from={from} to={to} /></div>
+          )}
         </Card>
 
         <Card>

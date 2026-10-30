@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
+import { PickupHint } from "@/components/PickupHint";
+import { RouteMap } from "@/components/RouteMap";
 import { Button } from "@/components/ui";
 import { Card, Label, FieldButton, Segmented, StepBtn, TIME_WINDOWS } from "@/components/formkit";
 import { IconMapPin, IconFlag, IconPlus, IconMinus, IconArrowLeft, IconHome } from "@/components/icons";
-import { reverseGeocode } from "@/components/geocode";
+import { useDefaultPickup } from "@/components/useDefaultPickup";
 import { roadDistanceKm, type PinnedLocation } from "@/core/geo";
 import { FREE_DETOUR_KM, MAX_EXTRA_DETOUR_KM } from "@/core/pricing";
 import { createTripAction } from "@/app/app/actions";
@@ -79,23 +81,9 @@ export function CreateTripForm({ today }: { today: string }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  useEffect(() => {
-    if (from || !("geolocation" in navigator)) return;
-    let cancelled = false;
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude: lat, longitude: lng } = pos.coords;
-        if (cancelled) return;
-        setFrom({ lat, lng, label: "Current location" });
-        const label = await reverseGeocode(lat, lng);
-        if (!cancelled) setFrom({ lat, lng, label });
-      },
-      () => {},
-      { enableHighAccuracy: true, timeout: 8000 },
-    );
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const fromRef = useRef(from);
+  useEffect(() => { fromRef.current = from; });
+  const pickup = useDefaultPickup(true, () => !fromRef.current, setFrom);
 
   const totalDetourKm = FREE_DETOUR_KM + extraDetourKm;
   const distance = from && to ? roadDistanceKm(from, to) : 0;
@@ -142,6 +130,10 @@ export function CreateTripForm({ today }: { today: string }) {
                   label="Going to" value={to?.label} placeholder="Where to?"
                   onClick={() => setSheet("to")} />
               </div>
+              <PickupHint status={pickup.status} message={pickup.message} retry={pickup.retry} hasPickup={!!from} />
+              {from && to && (
+                <div className="mt-3"><RouteMap from={from} to={to} /></div>
+              )}
             </Card>
 
             <Card>

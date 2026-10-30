@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { RequestActions } from "@/components/RequestActions";
 import { TravelerMatchFlow } from "@/components/TravelerMatchFlow";
 import { KindChip, RouteTimeline } from "@/components/RouteCard";
+import { RouteMap } from "@/components/RouteMap";
 import { CancelTripButton } from "@/components/CancelTripButton";
 import { WithdrawRequestButton } from "@/components/WithdrawRequestButton";
 import { TRANSPORT_ICONS_SOLID, IconArrowRight, IconStar, IconPackage, IconChevronRight } from "@/components/icons";
@@ -71,6 +72,15 @@ export default async function TripDetailPage({
               />
             }
           />
+          {trip.fromLat != null && trip.fromLng != null && trip.toLat != null && trip.toLng != null && (
+            <div className="mt-4">
+              <RouteMap
+                from={{ lat: trip.fromLat, lng: trip.fromLng }}
+                to={{ lat: trip.toLat, lng: trip.toLng }}
+                heightClass="h-48"
+              />
+            </div>
+          )}
           <Capacity spare={spareKg} total={trip.capacityKg} />
         </div>
 

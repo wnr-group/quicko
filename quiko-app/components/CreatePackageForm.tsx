@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition, useRef } from "react";
 import dynamic from "next/dynamic";
+import { PickupHint } from "@/components/PickupHint";
+import { RouteMap } from "@/components/RouteMap";
 import { Button } from "@/components/ui";
 import { IconMapPin, IconFlag, IconChevronRight, IconPlus, IconMinus } from "@/components/icons";
 import { calculatePrice } from "@/core/pricing";
 import { digitsOnly, PHONE_MAX } from "@/lib/validation";
 import { roadDistanceKm, type PinnedLocation } from "@/core/geo";
-import { reverseGeocode } from "@/components/geocode";
+import { useDefaultPickup } from "@/components/useDefaultPickup";
 import type { TimePreference } from "@/core/types";
 import { createPackageAction, updatePackageAction } from "@/app/app/actions";
 
@@ -73,23 +75,9 @@ export function CreatePackageForm({
   const dateTo = timePreference === "flexible" ? to0 : travelDate;
   const dateOk = timePreference !== "flexible" || from0 <= to0;
 
-  useEffect(() => {
-    if (from || initial || !("geolocation" in navigator)) return;
-    let cancelled = false;
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude: lat, longitude: lng } = pos.coords;
-        if (cancelled) return;
-        setFrom({ lat, lng, label: "Current location" });
-        const label = await reverseGeocode(lat, lng);
-        if (!cancelled) setFrom({ lat, lng, label });
-      },
-      () => {},
-      { enableHighAccuracy: true, timeout: 8000 },
-    );
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const fromRef = useRef(from);
+  useEffect(() => { fromRef.current = from; });
+  const pickup = useDefaultPickup(!initial, () => !fromRef.current, setFrom);
 
   const distance = from && to ? roadDistanceKm(from, to) : 0;
   // Price is computed for the request but never shown here — seen at payment.
@@ -133,6 +121,10 @@ export function CreatePackageForm({
               label="Destination" value={to?.label} placeholder="Where to?"
               onClick={() => setSheet("to")} />
           </div>
+          <PickupHint status={pickup.status} message={pickup.message} retry={pickup.retry} hasPickup={!!from} />
+          {from && to && (
+            <div className="mt-3"><RouteMap from={from} to={to} /></div>
+          )}
         </Card>
 
         {/* Receiver — only in edit; optional. Captured on match otherwise. */}
