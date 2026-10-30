@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { coordsFromGoogleUrl, isGoogleHost, isShortHost } from "@/core/mapsLink";
+import { coordsFromGoogleUrl, isGoogleHost, isShortHost, placeQueryFromGoogleUrl } from "@/core/mapsLink";
 
 // Resolves a Google Maps *short* link (maps.app.goo.gl/…) to coordinates.
 // Browsers can't follow it (CORS), so the server follows the redirects itself.
@@ -46,6 +46,10 @@ export async function GET(req: Request) {
       }
       break;
     }
+    // Resolved to a Google page with a place name but no coordinates: hand the
+    // name back so the client can find it with Mapbox search.
+    const query = isGoogleHost(url.hostname) ? placeQueryFromGoogleUrl(url.toString()) : null;
+    if (query) return NextResponse.json({ query });
   } catch {
     return bad("Couldn't open that link. Check your connection and try again.", 502);
   }

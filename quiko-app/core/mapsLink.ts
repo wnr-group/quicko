@@ -5,11 +5,16 @@
 export type PastedLocation = { lat: number; lng: number; name?: string };
 export type ParsedInput =
   | ({ kind: "coords" } & PastedLocation)
-  | { kind: "short"; url: string };
+  | { kind: "short"; url: string }
+  // A Google link with a place name/address but no coordinates: search for it.
+  | { kind: "query"; query: string };
 
 const SHORT_HOSTS = new Set(["maps.app.goo.gl", "goo.gl", "g.co"]);
 export const isShortHost = (h: string) => SHORT_HOSTS.has(h.toLowerCase());
-export const isGoogleHost = (h: string) => /(^|\.)google\.[a-z.]{2,}$/i.test(h);
+// Google's own registrable domains only: google.com, google.co.in, google.com.au,
+// google.de … — never "google.com.evil.com" (the TLD part is closed, not open-ended).
+export const isGoogleHost = (h: string) =>
+  /^([a-z0-9-]+\.)*google\.(com|co\.[a-z]{2}|com\.[a-z]{2}|[a-z]{2})$/i.test(h);
 
 const valid = (lat: number, lng: number) =>
   Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
@@ -33,6 +38,7 @@ export function coordsFromGoogleUrl(raw: string): PastedLocation | null {
   const loc =
     pair(full.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/)) ??
     pair(full.match(new RegExp(`@${PAIR}`))) ??
+    pair(full.match(new RegExp(`/maps/place/${PAIR}`))) ??
     ["q", "query", "ll", "destination", "center", "daddr"]
       .map((k) => pair((u.searchParams.get(k) ?? "").match(new RegExp(`^${PAIR}$`))))
       .find(Boolean) ??
@@ -46,6 +52,21 @@ export function coordsFromGoogleUrl(raw: string): PastedLocation | null {
     if (name && !new RegExp(`^${PAIR}$`).test(name)) loc.name = name;
   }
   return loc;
+}
+
+/** The place name / address text in a google.* URL, for links with no coordinates. */
+export function placeQueryFromGoogleUrl(raw: string): string | null {
+  let u: URL;
+  try { u = new URL(raw); } catch { return null; }
+  const fromPath = u.pathname.match(/\/maps\/(?:place|search)\/([^/@]+)/);
+  const candidates = [
+    fromPath && decodeURIComponent(fromPath[1].replace(/\+/g, " ")),
+    u.searchParams.get("q"),
+    u.searchParams.get("query"),
+    u.searchParams.get("destination"),
+  ];
+  const q = candidates.find((c) => c && c.trim().length >= 3 && !new RegExp(`^${PAIR}$`).test(c.trim()));
+  return q ? q.trim().slice(0, 200) : null;
 }
 
 export function parseMapsInput(text: string): ParsedInput | null {
@@ -65,7 +86,9 @@ export function parseMapsInput(text: string): ParsedInput | null {
   if (isShortHost(host)) return { kind: "short", url };
   if (isGoogleHost(host)) {
     const c = coordsFromGoogleUrl(url);
-    return c ? { kind: "coords", ...c } : null;
+    if (c) return { kind: "coords", ...c };
+    const query = placeQueryFromGoogleUrl(url);
+    return query ? { kind: "query", query } : null;
   }
   return null;
 }

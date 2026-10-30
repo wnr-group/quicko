@@ -1,14 +1,14 @@
 "use client";
 
 // Route preview: pickup/destination markers, the Mapbox Directions polyline, and
-// route line. Re-fetches whenever either end changes. Optional
+// route line, distance and travel time. Re-fetches whenever either end changes. Optional
 // `packageStops` overlays a package's pickup/drop on a traveller's route and
 // reports whether they actually lie along it (core/routeCorridor).
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { LatLng } from "@/core/geo";
 import { corridorFit } from "@/core/routeCorridor";
-import { fetchRoute, type RoadRoute } from "@/components/directions";
+import { fetchRoute, formatDuration, type RoadRoute } from "@/components/directions";
 import { mapboxConfigured } from "@/lib/maps";
 import type { MapMarker } from "@/components/MapCanvas";
 
@@ -104,6 +104,14 @@ export function RouteMap({
       </div>
       {state.s === "error" && (
         <p className="mt-2 rounded-xl bg-error-soft px-3 py-2 text-[13px] font-medium text-error">{state.msg}</p>
+      )}
+      {route && (
+        <div className="mt-2 flex items-center gap-3 text-[14px] font-bold">
+          <span>{Math.round(route.distanceKm)} km</span>
+          <span className="text-muted">·</span>
+          <span>{formatDuration(route.durationMin)}</span>
+          <span className="ml-auto text-[12px] font-semibold text-muted">by road</span>
+        </div>
       )}
       {fit && (
         <p

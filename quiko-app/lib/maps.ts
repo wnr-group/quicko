@@ -5,7 +5,9 @@
 // app's URLs and give it only the public scopes (styles:tiles, styles:read,
 // fonts:read). Never put a secret token (sk.*) in a NEXT_PUBLIC_ variable.
 
-export const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
+// NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN is accepted as an alias (Mapbox's own naming).
+export const MAPBOX_TOKEN =
+  process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN ?? "";
 
 /** Map style; override with NEXT_PUBLIC_MAPBOX_STYLE (e.g. a custom Studio style). */
 export const MAPBOX_STYLE =
