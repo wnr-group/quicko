@@ -27,7 +27,10 @@ export function SendStep1({
   const [to, setTo] = useState<PinnedLocation | null>(null);
   const [sheet, setSheet] = useState<"from" | "to" | null>(null);
   const [weightKg, setWeightKg] = useState(1);
-  const [restored, setRestored] = useState(false);
+  // null until the restore pass runs; then true only if we still need a default
+  // pickup. Asking for GPS when a pickup was already restored prompts the user
+  // for a permission whose result we would immediately discard.
+  const [needsPickup, setNeedsPickup] = useState<boolean | null>(null);
 
   useEffect(() => {
     // Restore a previous selection (e.g. after tapping back from Explore) so the
@@ -46,14 +49,18 @@ export function SendStep1({
         if (s.to) setTo(s.to);
         if (s.weightKg) setWeightKg(s.weightKg);
         /* eslint-enable react-hooks/set-state-in-effect */
+        if (s.from) {
+          setNeedsPickup(false);
+          return;
+        }
       }
     } catch {}
-    setRestored(true);
+    setNeedsPickup(true);
   }, []);
 
   const fromRef = useRef(from);
   useEffect(() => { fromRef.current = from; });
-  const pickup = useDefaultPickup(restored, () => !fromRef.current, setFrom);
+  const pickup = useDefaultPickup(needsPickup === true, () => !fromRef.current, setFrom);
 
   const ready = !!from && !!to;
 

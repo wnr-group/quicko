@@ -54,6 +54,8 @@ export default function LocationSheet({
   const [typing, setTyping] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Suggestion[]>([]);
+  // Search request failed (offline, API error) — distinct from "nothing matched".
+  const [searchFailed, setSearchFailed] = useState(false);
   // "reading" while a pasted link is resolved; an error string if it can't be.
   const [paste, setPaste] = useState<"reading" | string | null>(null);
 
@@ -115,6 +117,10 @@ export default function LocationSheet({
       if (!initial) locate(true);
     });
     return () => {
+      // Deliberate: bumping the counter is how an in-flight reverse-geocode is
+      // invalidated on unmount. The lint rule assumes we are READING a possibly
+      // stale ref; here the whole point is to mutate the live one.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       reqId.current++;
       marker.remove();
       m.remove();
@@ -172,10 +178,12 @@ export default function LocationSheet({
   useEffect(() => {
     const q = query.trim();
     if (q.length < 3) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+      /* eslint-disable react-hooks/set-state-in-effect */
       setResults([]);
       setSearching(false);
+      setSearchFailed(false);
       setPaste(null);
+      /* eslint-enable react-hooks/set-state-in-effect */
       return;
     }
     const ctl = new AbortController();
@@ -205,7 +213,7 @@ export default function LocationSheet({
           }
           // No coordinates in the link: find the named place with search instead.
           if (!loc && text) {
-            const [hit] = await searchPlaces(text, { near: near(), signal: ctl.signal });
+            const [hit] = (await searchPlaces(text, { near: near(), signal: ctl.signal })) ?? [];
             const p = hit && (await retrievePlace(hit, ctl.signal));
             if (ctl.signal.aborted) return;
             if (!p) throw new Error(`Couldn't find "${text}" on the map. Search for it by name instead.`);
@@ -230,7 +238,8 @@ export default function LocationSheet({
     const t = setTimeout(async () => {
       const r = await searchPlaces(q, { near: near(), signal: ctl.signal });
       if (ctl.signal.aborted) return;
-      setResults(r);
+      setSearchFailed(r === null);
+      setResults(r ?? []);
       setSearching(false);
     }, 300);
     return () => {
@@ -284,7 +293,9 @@ export default function LocationSheet({
           )}
           {!paste && query.trim().length >= 3 && !searching && results.length === 0 && (
             <div className="absolute z-[600] mt-1 w-full rounded-xl border border-line bg-white px-3 py-3 text-[14px] text-muted shadow-pop">
-              No places found. Try a nearby landmark or locality.
+              {searchFailed
+                ? "Couldn't reach search right now. Check your connection, or tap the map to drop a pin."
+                : "No places found. Try a nearby landmark or locality."}
             </div>
           )}
           {results.length > 0 && (
@@ -313,7 +324,8 @@ export default function LocationSheet({
           <div ref={box} className="h-full w-full" />
         ) : (
           <div className="grid h-full place-items-center p-6 text-center text-sm text-muted">
-            Map unavailable — set NEXT_PUBLIC_MAPBOX_TOKEN to enable maps and search.
+            Map unavailable right now. You can still confirm the location below,
+            or type an address in the search box.
           </div>
         )}
         {mapboxConfigured() && !ready && (
@@ -347,7 +359,7 @@ export default function LocationSheet({
         )}
       </div>
 
-{/* Confirm bar */}
+      {/* Confirm bar */}
       <div className="pb-safe border-t border-line px-5 pt-3">
         <div className="mb-3 flex items-start gap-2.5">
           <span className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full text-[11px] font-bold ${isFrom ? "bg-ink text-brand" : "bg-brand text-ink"}`}>

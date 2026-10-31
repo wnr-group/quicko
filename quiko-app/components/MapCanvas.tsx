@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { MAPBOX_STYLE, MAPBOX_TOKEN } from "@/lib/maps";
+import { MAPBOX_STYLE, MAPBOX_TOKEN, mapboxConfigured } from "@/lib/maps";
 import { enrichBaseMap } from "@/lib/mapStyle";
 import { boundsOf, type LngLat } from "@/core/routeCorridor";
 import type { LatLng } from "@/core/geo";
@@ -54,7 +54,9 @@ export default function MapCanvas({
 
   // Create the map once.
   useEffect(() => {
-    if (!box.current || !MAPBOX_TOKEN) return;
+    // mapboxConfigured() (not just a non-empty string) — a malformed token
+    // would otherwise init GL and fail with a 401 storm.
+    if (!box.current || !mapboxConfigured()) return;
     mapboxgl.accessToken = MAPBOX_TOKEN;
     const m = new mapboxgl.Map({
       container: box.current,

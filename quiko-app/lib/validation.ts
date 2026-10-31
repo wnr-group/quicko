@@ -9,6 +9,17 @@ export const digitsOnly = (s: string) => s.replace(/\D/g, "").slice(0, PHONE_MAX
 /** Digits only, PHONE_MIN–PHONE_MAX long. No letters, spaces or symbols. */
 export const isValidPhone = (s: string) => new RegExp(`^\\d{${PHONE_MIN},${PHONE_MAX}}$`).test(s);
 
+/**
+ * Strip formatting a human (or an API client) might send — "+91 98765 43210",
+ * "(98765) 43210" — WITHOUT truncating. Use this on anything arriving from
+ * outside the browser form; the form itself already constrains input with
+ * digitsOnly, but /api/packages accepts whatever a client sends, and rejecting a
+ * correctly-typed number because it carries a "+" is a worse bug than accepting
+ * it. Length is still validated afterwards, so an over-long number is rejected
+ * rather than silently cut down to something plausible.
+ */
+export const normalizePhoneInput = (s: string) => s.replace(/\D/g, "");
+
 export const createPackageSchema = z
   .object({
     fromLabel: z.string().min(1, "Set a pickup location").max(120),
@@ -26,8 +37,8 @@ export const createPackageSchema = z
     receiverName: z.string().trim().min(2).max(60).optional(),
     receiverPhone: z
       .string()
-      .trim()
-      .refine((p) => p.length === 0 || isValidPhone(p), "Receiver phone must be 10–15 digits, numbers only")
+      .transform((p) => normalizePhoneInput(p))
+      .refine((p) => p.length === 0 || isValidPhone(p), "Receiver phone must be 10–15 digits")
       .optional(),
     offerPrice: z.number().int().positive(),
   })

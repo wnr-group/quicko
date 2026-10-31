@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { IconMapPin, IconPackage } from "@/components/icons";
 import { getProfile } from "@/lib/auth";
@@ -12,6 +12,9 @@ export default async function SplashPage() {
   try {
     signedIn = !!(await getProfile());
   } catch (e) {
+    // cookies()/redirect() signal Next by throwing. Swallowing those breaks the
+    // framework — and made every build log a bogus "profile lookup failed".
+    unstable_rethrow(e);
     console.error("[splash] profile lookup failed, showing the splash anyway:", e);
   }
   if (signedIn) redirect("/app");

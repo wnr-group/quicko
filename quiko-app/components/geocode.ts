@@ -11,16 +11,37 @@ const coordFallback = (lat: number, lng: number) => `${lat.toFixed(3)}, ${lng.to
 
 // One search session groups a user's keystrokes + final pick into one billing
 // session. Rotate it after a place is chosen.
-let session = crypto.randomUUID();
-export const endSearchSession = () => { session = crypto.randomUUID(); };
+//
+// crypto.randomUUID() only exists in a SECURE CONTEXT. localhost qualifies but a
+// LAN origin like http://192.168.x.x does not — and that is exactly how the app
+// is opened on a phone during development. At module scope an undefined
+// randomUUID would throw on import and take down every screen that pulls this
+// module in, so resolve it lazily and fall back to a plain random id. This value
+// only has to be unique per search session; it is not a security token.
+const newSessionId = (): string => {
+  try {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+  } catch { /* not a secure context — fall through */ }
+  return `s-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+};
+
+let session: string | null = null;
+const sessionId = () => (session ??= newSessionId());
+export const endSearchSession = () => { session = newSessionId(); };
 
 const cache = new Map<string, Promise<unknown>>();
+/** Insert under the shared size cap, so no caller can grow the map unbounded. */
+function remember(key: string, value: Promise<unknown>): void {
+  if (cache.size > 200) cache.delete(cache.keys().next().value!);
+  cache.set(key, value);
+}
 function memo<T>(key: string, load: () => Promise<T>): Promise<T> {
   const hit = cache.get(key);
   if (hit) return hit as Promise<T>;
   const p = load().catch((e) => { cache.delete(key); throw e; });
-  if (cache.size > 200) cache.delete(cache.keys().next().value!);
-  cache.set(key, p);
+  remember(key, p);
   return p;
 }
 
@@ -95,23 +116,26 @@ type SbSuggestion = {
  * Autocomplete via the Search Box API, which — unlike plain geocoding — also
  * finds shops, businesses and landmarks, not just streets and areas. Suggestions
  * carry no coordinates; call retrievePlace() on the one the user picks.
- * Biased toward `near`. Returns [] on failure or abort.
+ * Biased toward `near`. Returns null when the lookup FAILED (as opposed to an
+ * empty array, which means it succeeded and nothing matched) so the caller can
+ * tell "no such place" apart from "search is down".
  */
 export async function searchPlaces(
   q: string,
   opts: { near?: { lat: number; lng: number }; signal?: AbortSignal } = {},
-): Promise<Suggestion[]> {
+): Promise<Suggestion[] | null> {
   const query = q.trim();
-  if (!MAPBOX_TOKEN || query.length < 3) return [];
+  if (!MAPBOX_TOKEN) return null;
+  if (query.length < 3) return [];
   const prox = opts.near ? `&proximity=${opts.near.lng},${opts.near.lat}` : "";
   const url =
     `${SEARCH}/suggest?q=${encodeURIComponent(query)}&country=${MAPBOX_COUNTRY}&language=en` +
-    `&limit=8&session_token=${session}${prox}&access_token=${MAPBOX_TOKEN}`;
+    `&limit=8&session_token=${sessionId()}${prox}&access_token=${MAPBOX_TOKEN}`;
   try {
     const hit = cache.get(`s:${url}`);
     if (hit) return (await hit) as Suggestion[];
     const r = await fetch(url, { signal: opts.signal });
-    if (!r.ok) return [];
+    if (!r.ok) return null;
     const d = (await r.json()) as { suggestions?: SbSuggestion[] };
     const out = (d.suggestions ?? []).map((x) => ({
       id: x.mapbox_id,
@@ -119,10 +143,12 @@ export async function searchPlaces(
       // Street/area line shown under the name, so two branches of one store differ.
       detail: x.address && x.place_formatted ? `${x.address}, ${x.place_formatted}` : (x.full_address || x.place_formatted || ""),
     })).filter((x) => x.id && x.label);
-    cache.set(`s:${url}`, Promise.resolve(out));
+    remember(`s:${url}`, Promise.resolve(out));
     return out;
-  } catch {
-    return [];
+  } catch (e) {
+    // An abort is the caller superseding this search, not a failure.
+    if ((e as Error | undefined)?.name === "AbortError") return [];
+    return null;
   }
 }
 
@@ -131,7 +157,7 @@ export async function retrievePlace(s: Suggestion, signal?: AbortSignal): Promis
   if (!MAPBOX_TOKEN) return null;
   try {
     const r = await fetch(
-      `${SEARCH}/retrieve/${encodeURIComponent(s.id)}?session_token=${session}&access_token=${MAPBOX_TOKEN}`,
+      `${SEARCH}/retrieve/${encodeURIComponent(s.id)}?session_token=${sessionId()}&access_token=${MAPBOX_TOKEN}`,
       { signal },
     );
     if (!r.ok) return null;
