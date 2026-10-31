@@ -58,7 +58,12 @@ page.setDefaultTimeout(15000);
 
 try {
   await page.goto("http://localhost:3000");
+  // Landing "Get Started" opens the tour (it always has); the tour's Skip goes
+  // to /app, which bounces a signed-out visitor to /login. Walking the real
+  // entry path rather than jumping straight to /login.
   await page.getByRole("link", { name: "Get Started" }).click();
+  await page.waitForURL("**/tour");
+  await page.getByRole("link", { name: "Skip" }).click();
   await page.waitForURL("**/login");
   await page.getByRole("button", { name: "Send Code" }).click();
   await page.locator('input[inputmode="numeric"]').fill("345678");
@@ -66,7 +71,9 @@ try {
   await page.waitForURL("**/app");
   log("logged in");
 
-  await page.getByRole("link", { name: /Send a Package/ }).click();
+  // The home CTA now opens the newer multi-step /app/send flow; this script
+  // exercises the single-page package form, which still lives here.
+  await page.goto("http://localhost:3000/app/packages/new");
   await page.waitForURL("**/packages/new");
   await page.getByText("T. Nagar, Chennai").waitFor();
   log("pickup = current location (Chennai)");
