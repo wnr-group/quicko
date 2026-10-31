@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
+import { PickupHint } from "@/components/PickupHint";
+import { RouteMap } from "@/components/RouteMap";
 import { Button } from "@/components/ui";
 import { Card, Label, FieldButton, StepBtn, StepHeader } from "@/components/formkit";
 import { IconMapPin, IconFlag, IconPlus, IconMinus } from "@/components/icons";
-import { reverseGeocode } from "@/components/geocode";
+import { useDefaultPickup } from "@/components/useDefaultPickup";
 import { toSendQuery, SEND_STORE_KEY } from "@/lib/sendParams";
 import type { PinnedLocation } from "@/core/geo";
 
@@ -25,6 +27,10 @@ export function SendStep1({
   const [to, setTo] = useState<PinnedLocation | null>(null);
   const [sheet, setSheet] = useState<"from" | "to" | null>(null);
   const [weightKg, setWeightKg] = useState(1);
+  // null until the restore pass runs; then true only if we still need a default
+  // pickup. Asking for GPS when a pickup was already restored prompts the user
+  // for a permission whose result we would immediately discard.
+  const [needsPickup, setNeedsPickup] = useState<boolean | null>(null);
 
   useEffect(() => {
     // Restore a previous selection (e.g. after tapping back from Explore) so the
@@ -43,26 +49,18 @@ export function SendStep1({
         if (s.to) setTo(s.to);
         if (s.weightKg) setWeightKg(s.weightKg);
         /* eslint-enable react-hooks/set-state-in-effect */
-        if (s.from) return; // had a pickup already → don't override with geolocation
+        if (s.from) {
+          setNeedsPickup(false);
+          return;
+        }
       }
     } catch {}
-
-    if (from || !("geolocation" in navigator)) return;
-    let cancelled = false;
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude: lat, longitude: lng } = pos.coords;
-        if (cancelled) return;
-        setFrom({ lat, lng, label: "Current location" });
-        const label = await reverseGeocode(lat, lng);
-        if (!cancelled) setFrom({ lat, lng, label });
-      },
-      () => {},
-      { enableHighAccuracy: true, timeout: 8000 },
-    );
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setNeedsPickup(true);
   }, []);
+
+  const fromRef = useRef(from);
+  useEffect(() => { fromRef.current = from; });
+  const pickup = useDefaultPickup(needsPickup === true, () => !fromRef.current, setFrom);
 
   const ready = !!from && !!to;
 
@@ -81,9 +79,9 @@ export function SendStep1({
   }
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <StepHeader step={1} total={2} label="Route & weight" />
-      <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-5">
+      <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5">
         <Card>
           <Label>Where are you sending?</Label>
           <div className="overflow-hidden rounded-2xl border border-line-strong bg-canvas">
@@ -95,6 +93,10 @@ export function SendStep1({
               label="Destination" value={to?.label} placeholder="Where to?"
               onClick={() => setSheet("to")} />
           </div>
+          <PickupHint status={pickup.status} message={pickup.message} retry={pickup.retry} hasPickup={!!from} />
+          {from && to && (
+            <div className="mt-3"><RouteMap from={from} to={to} /></div>
+          )}
         </Card>
 
         <Card>
@@ -114,7 +116,7 @@ export function SendStep1({
         </Card>
       </div>
 
-      <div className="pb-safe border-t border-line bg-canvas px-5 pt-3">
+      <div className="pb-safe shrink-0 border-t border-line bg-canvas px-5 pt-3">
         <Button variant="brand" onClick={explore} disabled={!ready}>
           {!from || !to ? "Set pickup & destination" : "Explore travellers"}
         </Button>

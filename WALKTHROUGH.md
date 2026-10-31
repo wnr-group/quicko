@@ -107,7 +107,8 @@ Three external services run in free/mock mode locally and swap to real providers
 via one env var each (see `.env.example`):
 - **Payments** — simulated escrow (no real money). Real: Cashfree Easy Split.
 - **SMS OTP** — mock (code = `345678`). Real: MSG91.
-- **Maps** — free OpenStreetMap. Real: MapTiler.
+- **Maps** — Mapbox (map, place search, driving routes). Needs `NEXT_PUBLIC_MAPBOX_TOKEN`;
+  there is no free fallback, so without it the picker has no map and no search.
 
 ---
 

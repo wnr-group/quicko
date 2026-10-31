@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
+import { PickupHint } from "@/components/PickupHint";
+import { RouteMap } from "@/components/RouteMap";
 import { Button } from "@/components/ui";
 import { Card, Label, FieldButton, Segmented, StepBtn, TIME_WINDOWS } from "@/components/formkit";
 import { IconMapPin, IconFlag, IconPlus, IconMinus, IconArrowLeft, IconHome } from "@/components/icons";
-import { reverseGeocode } from "@/components/geocode";
+import { useDefaultPickup } from "@/components/useDefaultPickup";
 import { roadDistanceKm, type PinnedLocation } from "@/core/geo";
 import { FREE_DETOUR_KM, MAX_EXTRA_DETOUR_KM } from "@/core/pricing";
 import { createTripAction } from "@/app/app/actions";
@@ -79,23 +81,9 @@ export function CreateTripForm({ today }: { today: string }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  useEffect(() => {
-    if (from || !("geolocation" in navigator)) return;
-    let cancelled = false;
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude: lat, longitude: lng } = pos.coords;
-        if (cancelled) return;
-        setFrom({ lat, lng, label: "Current location" });
-        const label = await reverseGeocode(lat, lng);
-        if (!cancelled) setFrom({ lat, lng, label });
-      },
-      () => {},
-      { enableHighAccuracy: true, timeout: 8000 },
-    );
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const fromRef = useRef(from);
+  useEffect(() => { fromRef.current = from; });
+  const pickup = useDefaultPickup(true, () => !fromRef.current, setFrom);
 
   const totalDetourKm = FREE_DETOUR_KM + extraDetourKm;
   const distance = from && to ? roadDistanceKm(from, to) : 0;
@@ -125,10 +113,10 @@ export function CreateTripForm({ today }: { today: string }) {
   }
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <WizardHeader step={step} onBack={goBack} />
 
-      <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-5">
+      <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5">
         {step === 1 && (
           <>
             <Card>
@@ -142,12 +130,16 @@ export function CreateTripForm({ today }: { today: string }) {
                   label="Going to" value={to?.label} placeholder="Where to?"
                   onClick={() => setSheet("to")} />
               </div>
+              <PickupHint status={pickup.status} message={pickup.message} retry={pickup.retry} hasPickup={!!from} />
+              {from && to && (
+                <div className="mt-3"><RouteMap from={from} to={to} /></div>
+              )}
             </Card>
 
             <Card>
               <Label>Departure</Label>
               <div className="flex items-end gap-2">
-                <label className="min-w-0 flex-[1.3]">
+                <label className="min-w-0 flex-1">
                   <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-muted">Date</span>
                   <input type="date" value={departDate} min={today}
                     onChange={(e) => {
@@ -159,7 +151,7 @@ export function CreateTripForm({ today }: { today: string }) {
                 <label className="min-w-0 flex-1">
                   <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-muted">Window</span>
                   <select value={departTime} onChange={(e) => setDepartTime(e.target.value)}
-                    className="w-full min-w-0 rounded-xl border border-line-strong bg-canvas px-3 py-2.5 text-[15px] outline-none focus:border-ink">
+                    className="w-full min-w-0 appearance-none rounded-xl border border-line-strong bg-canvas bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2214%22 height=%2214%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22m6 9 6 6 6-6%22/></svg>')] bg-[length:14px] bg-[right_0.75rem_center] bg-no-repeat py-2.5 pl-3 pr-9 text-[15px] outline-none focus:border-ink">
                     {TIME_WINDOWS.map((w) => <option key={w.value} value={w.value}>{w.label}</option>)}
                   </select>
                 </label>
@@ -169,7 +161,7 @@ export function CreateTripForm({ today }: { today: string }) {
             <Card>
               <Label>Arrival</Label>
               <div className="flex items-end gap-2">
-                <label className="min-w-0 flex-[1.3]">
+                <label className="min-w-0 flex-1">
                   <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-muted">Date</span>
                   <input type="date" value={arriveDate} min={departDate} onChange={(e) => setArriveDate(e.target.value)}
                     className="w-full min-w-0 rounded-xl border border-line-strong bg-canvas px-3 py-2.5 text-[15px] outline-none focus:border-ink" />
@@ -177,7 +169,7 @@ export function CreateTripForm({ today }: { today: string }) {
                 <label className="min-w-0 flex-1">
                   <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-muted">Window</span>
                   <select value={arriveTime} onChange={(e) => setArriveTime(e.target.value)}
-                    className="w-full min-w-0 rounded-xl border border-line-strong bg-canvas px-3 py-2.5 text-[15px] outline-none focus:border-ink">
+                    className="w-full min-w-0 appearance-none rounded-xl border border-line-strong bg-canvas bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2214%22 height=%2214%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22m6 9 6 6 6-6%22/></svg>')] bg-[length:14px] bg-[right_0.75rem_center] bg-no-repeat py-2.5 pl-3 pr-9 text-[15px] outline-none focus:border-ink">
                     {TIME_WINDOWS.map((w) => <option key={w.value} value={w.value}>{w.label}</option>)}
                   </select>
                 </label>
@@ -280,7 +272,7 @@ export function CreateTripForm({ today }: { today: string }) {
         {error && <p className="mt-4 rounded-xl bg-error-soft px-3 py-2 text-sm font-medium text-error">{error}</p>}
       </div>
 
-      <div className="pb-safe border-t border-line bg-white px-5 pt-3">
+      <div className="pb-safe shrink-0 border-t border-line bg-white px-5 pt-3">
         {step === 1 ? (
           <Button variant="brand" onClick={() => setStep(2)} disabled={!step1Ready}>
             {!from || !to ? "Set your route" : "Continue"}

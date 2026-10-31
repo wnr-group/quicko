@@ -86,7 +86,8 @@ export default async function AppHome() {
                     from={placeShort(p.fromCity)}
                     to={placeShort(p.toCity)}
                     kind={{ icon: <IconPackage width={13} height={13} strokeWidth={2.25} />, label: "Package" }}
-                    amount={inr(p.offerPrice)}
+                    // Price stays hidden until a traveller has been matched and accepted.
+                    amount={["matched", "in_transit", "delivered"].includes(p.status) ? inr(p.offerPrice) : undefined}
                     meta={
                       <>
                         <span className="font-bold text-ink">{dateShort(p.travelDate)}</span>{" "}

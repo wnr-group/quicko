@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { LoginForm } from "@/components/LoginForm";
 import { getProfile } from "@/lib/auth";
@@ -23,6 +23,7 @@ export default async function LoginPage({
   try {
     signedIn = !!(await getProfile());
   } catch (e) {
+    unstable_rethrow(e); // never swallow Next's own control-flow errors
     console.error("[login] profile lookup failed, showing the form anyway:", e);
   }
   if (signedIn) redirect(safeNext(next));

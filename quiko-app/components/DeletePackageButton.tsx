@@ -27,11 +27,11 @@ export function DeletePackageButton({ packageId }: { packageId: string }) {
   }
 
   return (
-    <div>
+    <div className="flex flex-col">
       <button
         onClick={onClick}
         disabled={pending}
-        className={`flex w-full items-center justify-center gap-1.5 rounded-2xl px-4 py-3.5 text-[15px] font-semibold transition-colors ${
+        className={`flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-2xl px-4 py-3.5 text-[15px] font-semibold transition-colors active:scale-[0.98] ${
           confirming
             ? "bg-error text-white"
             : "bg-error-soft text-error hover:bg-error/15"

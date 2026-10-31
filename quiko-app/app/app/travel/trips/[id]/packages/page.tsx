@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { TopBar } from "@/components/ui";
+import { PackageOnRouteMap } from "@/components/PackageOnRouteMap";
 import { OfferButton } from "@/components/OfferButton";
 import { IconArrowRight, IconStar, IconWeight, IconPackage } from "@/components/icons";
 import { requireUser, getProfile } from "@/lib/auth";
@@ -102,6 +103,13 @@ export default async function TripPackagesPage({
                     <span>{SPEED_LABELS[pkg.timePreference] ?? pkg.timePreference}</span>
                     <span>{dateShort(pkg.travelDate)}</span>
                   </div>
+
+                  <PackageOnRouteMap
+                    tripFrom={{ lat: trip.fromLat!, lng: trip.fromLng! }}
+                    tripTo={{ lat: trip.toLat!, lng: trip.toLng! }}
+                    pickup={{ lat: pkg.fromLat, lng: pkg.fromLng }}
+                    drop={{ lat: pkg.toLat, lng: pkg.toLng }}
+                  />
 
                   <OfferButton tripId={trip.id} packageId={pkg.id} price={price} verified={verified} />
                 </div>
