@@ -23,7 +23,7 @@ it runs locally in mock mode.
 | Auth | Custom JWT sessions (`jose`, httpOnly cookie `quiko_session`) |
 | OTP | Mock provider in the demo (code = `DEV_OTP`); MSG91 if keyed |
 | Payments | Simulated escrow by default; Cashfree if keyed |
-| Maps | Free OpenStreetMap/Nominatim by default; MapTiler if keyed |
+| Maps | **Mapbox** (GL JS, Search Box, Directions) — requires `NEXT_PUBLIC_MAPBOX_TOKEN` |
 | File storage | **None** — proof photos are base64 data-URIs stored in Postgres |
 
 The app is a **monorepo**. The Next.js app lives in `quiko-app/`, so Vercel's
@@ -60,9 +60,25 @@ Notes:
 - `?pgbouncer=true&sslmode=require` is **required** — without `sslmode` the
   connection can hang.
 
+**Required for maps:**
+
+| Var | Value shape |
+|---|---|
+| `NEXT_PUBLIC_MAPBOX_TOKEN` | Mapbox **public** token, `pk.…` |
+
+Maps replaced the old free OpenStreetMap/Nominatim stack, so this one has no
+free fallback: without it the location picker cannot show a map or search for
+places, which makes "send a package" unusable. It is a `NEXT_PUBLIC_` var, so it
+is **inlined at build time** — set it in Vercel and *redeploy*; adding it to an
+existing deployment does nothing. Restrict the token to the app's URLs in the
+Mapbox dashboard. Never use a secret (`sk.…`) token. Note `mapbox-gl` is licensed
+under the Mapbox TOS (not open source) and map loads, searches and Directions
+calls are each metered against your Mapbox plan.
+
 **Optional — leave UNSET for the demo** (each has a mock/free default):
-`CASHFREE_*` (payments → simulated), `MSG91_*` (OTP → mock), `NEXT_PUBLIC_MAPTILER_KEY`
-(maps → free OSM), `APP_URL` (only affects notification link hosts).
+`CASHFREE_*` (payments → simulated), `MSG91_*` (OTP → mock),
+`APP_URL` (only affects notification link hosts), `DEV_ORIGINS`
+(comma-separated LAN origins for `next dev` on a phone; dev-only).
 `DB_QUERY_TIMEOUT_MS` (per-query deadline in ms; defaults to 8000, `0` disables —
 see §8).
 

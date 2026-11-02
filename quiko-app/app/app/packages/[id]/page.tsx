@@ -109,10 +109,10 @@ export default async function PackageDetailPage({
 
         {/* Edit / cancel — only while the package is still active */}
         {pkg.status === "active" && (
-          <div className="mt-3 grid grid-cols-2 gap-2.5">
+          <div className="mt-3 grid grid-cols-[auto_1fr] gap-2.5">
             <Link
               href={`/app/packages/${pkg.id}/edit`}
-              className="flex items-center justify-center gap-1.5 rounded-2xl border border-line bg-white px-4 py-3.5 text-[15px] font-semibold text-ink active:scale-[0.98]"
+              className="flex items-center justify-center gap-1.5 rounded-2xl border border-line bg-white px-6 py-3.5 text-[15px] font-semibold text-ink active:scale-[0.98]"
             >
               <IconEdit width={16} height={16} /> Edit
             </Link>

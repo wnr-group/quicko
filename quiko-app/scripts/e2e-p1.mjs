@@ -12,20 +12,58 @@ const context = await browser.newContext({
   permissions: ["geolocation"],
   geolocation: { latitude: 13.0827, longitude: 80.2707 },
 });
-context.route(/nominatim\.openstreetmap\.org\/reverse/, (route) => {
-  const lat = parseFloat(new URL(route.request().url()).searchParams.get("lat"));
-  const body = lat > 16 ? { address: { suburb: "Bandra", city: "Mumbai" } } : { address: { suburb: "T. Nagar", city: "Chennai" } };
-  route.fulfill({ contentType: "application/json", body: JSON.stringify(body) });
+// NOTE: search and the map need a Mapbox token at BUILD time — NEXT_PUBLIC_* is
+// inlined by next build, so it cannot be injected here. Build the app under test
+// with a dummy public token, e.g.
+//   NEXT_PUBLIC_MAPBOX_TOKEN=pk.test npm run build && npm start
+// Every Mapbox endpoint the app calls is mocked below, so the token is never used
+// against the real API.
+// Mapbox reverse geocoding mocked (coord-aware) for determinism.
+const feat = (name, place, lat, lng) => ({
+  geometry: { coordinates: [lng, lat] },
+  properties: { name, place_formatted: place, coordinates: { latitude: lat, longitude: lng } },
 });
-context.route(/nominatim\.openstreetmap\.org\/search/, (route) =>
-  route.fulfill({ contentType: "application/json", body: JSON.stringify([{ lat: "19.0760", lon: "72.8777", display_name: "Mumbai", address: { city: "Mumbai", state: "Maharashtra" } }]) }),
+context.route(/api\.mapbox\.com\/search\/geocode\/v6\/reverse/, (route) => {
+  const lat = parseFloat(new URL(route.request().url()).searchParams.get("latitude"));
+  const f = lat > 16 ? feat("Bandra", "Mumbai", lat, 72.83) : feat("T. Nagar", "Chennai", lat, 80.23);
+  route.fulfill({ contentType: "application/json", body: JSON.stringify({ features: [f] }) });
+});
+// Autocomplete goes through the Search Box API (not geocode/v6/forward), in two
+// steps: /suggest returns names with no coordinates, /retrieve resolves the
+// picked one. Mock both or the picker has nothing to list.
+const SUGGESTIONS = [
+  { id: "mb.mumbai", name: "Mumbai", place: "Maharashtra", lat: 19.076, lng: 72.8777 },
+  { id: "mb.colaba", name: "Colaba", place: "Mumbai", lat: 18.922, lng: 72.8347 },
+];
+context.route(/api\.mapbox\.com\/search\/searchbox\/v1\/suggest/, (route) =>
+  route.fulfill({
+    contentType: "application/json",
+    body: JSON.stringify({
+      suggestions: SUGGESTIONS.map((s) => ({
+        mapbox_id: s.id, name: s.name, place_formatted: s.place,
+      })),
+    }),
+  }),
 );
+context.route(/api\.mapbox\.com\/search\/searchbox\/v1\/retrieve/, (route) => {
+  const id = decodeURIComponent(new URL(route.request().url()).pathname.split("/").pop());
+  const s = SUGGESTIONS.find((x) => x.id === id) ?? SUGGESTIONS[0];
+  route.fulfill({
+    contentType: "application/json",
+    body: JSON.stringify({ features: [feat(s.name, s.place, s.lat, s.lng)] }),
+  });
+});
 const page = await context.newPage();
 page.setDefaultTimeout(15000);
 
 try {
   await page.goto("http://localhost:3000");
+  // Landing "Get Started" opens the tour (it always has); the tour's Skip goes
+  // to /app, which bounces a signed-out visitor to /login. Walking the real
+  // entry path rather than jumping straight to /login.
   await page.getByRole("link", { name: "Get Started" }).click();
+  await page.waitForURL("**/tour");
+  await page.getByRole("link", { name: "Skip" }).click();
   await page.waitForURL("**/login");
   await page.getByRole("button", { name: "Send Code" }).click();
   await page.locator('input[inputmode="numeric"]').fill("345678");
@@ -33,16 +71,18 @@ try {
   await page.waitForURL("**/app");
   log("logged in");
 
-  await page.getByRole("link", { name: /Send a Package/ }).click();
+  // The home CTA now opens the newer multi-step /app/send flow; this script
+  // exercises the single-page package form, which still lives here.
+  await page.goto("http://localhost:3000/app/packages/new");
   await page.waitForURL("**/packages/new");
   await page.getByText("T. Nagar, Chennai").waitFor();
   log("pickup = current location (Chennai)");
 
   // Open destination sheet, search, confirm
   await page.getByText("Where to?").click();
-  await page.getByPlaceholder(/Search area/i).waitFor();
+  await page.getByLabel("Search for a place").waitFor();
   log("destination map sheet opened");
-  await page.getByPlaceholder(/Search area/i).fill("Mumbai");
+  await page.getByLabel("Search for a place").fill("Mumbai");
   await page.locator("ul li button").first().click();
   await page.waitForTimeout(1200);
   await page.getByRole("button", { name: /Confirm destination/ }).click();

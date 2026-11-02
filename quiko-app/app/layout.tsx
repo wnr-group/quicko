@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
+import { ViewportHeight } from "@/components/ViewportHeight";
 
 // Poppins — the brand's rounded geometric sans (brand guidelines §4). Weights
 // cover body (400/500), semibold UI (600), and the bold/black wordmark & heads.
@@ -31,7 +32,10 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${poppins.variable} h-full antialiased`}>
-      <body className="min-h-full">{children}</body>
+      <body className="min-h-full">
+        <ViewportHeight />
+        {children}
+      </body>
     </html>
   );
 }

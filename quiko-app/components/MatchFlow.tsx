@@ -7,6 +7,7 @@ import { inr, initials } from "@/core/format";
 import { detourFee as calcDetourFee, FREE_DETOUR_KM } from "@/core/pricing";
 import { IconSparkles, IconCheck, IconStar, IconChat } from "@/components/icons";
 import { CancelMatchButton } from "@/components/CancelMatchButton";
+import { digitsOnly, isValidPhone } from "@/lib/validation";
 import {
   payForMatchAction,
   rateTravelerAction,
@@ -262,11 +263,16 @@ export function MatchFlow({
           <input value={rName} onChange={(e) => setRName(e.target.value)} maxLength={60}
             placeholder="Receiver's name"
             className="w-full rounded-xl border border-line px-3.5 py-3 text-[15px] outline-none focus:border-ink" />
-          <input value={rPhone} onChange={(e) => setRPhone(e.target.value)} inputMode="tel"
+          {/* No maxLength: the browser applies it to the RAW pasted text, so
+              "+91 (98765) 432 10" would be cut before the non-digits are
+              stripped, leaving a wrong-but-valid-looking 10-digit number.
+              digitsOnly() already caps the length after stripping. */}
+          <input value={rPhone} onChange={(e) => setRPhone(digitsOnly(e.target.value))}
+            inputMode="numeric" pattern="[0-9]*" autoComplete="tel-national"
             placeholder="Receiver's phone"
             className="w-full rounded-xl border border-line px-3.5 py-3 text-[15px] outline-none focus:border-ink" />
           <PrimaryBtn
-            disabled={pending || rName.trim().length < 2 || rPhone.replace(/\D/g, "").length < 10}
+            disabled={pending || rName.trim().length < 2 || !isValidPhone(rPhone)}
             onClick={() => run(() => setReceiverAction(packageId, rName, rPhone))}>
             {pending ? "Saving…" : "Save & continue to payment"}
           </PrimaryBtn>

@@ -51,7 +51,7 @@ export function TopBar({
 }) {
   const router = useRouter();
   return (
-    <header className="pt-safe sticky top-0 z-20 flex items-center gap-3 border-b border-line bg-canvas/90 px-4 pb-3 backdrop-blur-md">
+    <header className="pt-safe sticky top-0 z-20 mb-3 flex items-center gap-3 border-b border-line bg-canvas/90 px-4 pb-3 backdrop-blur-md">
       {back && (
         <button
           onClick={() => (backHref ? router.replace(backHref) : router.back())}

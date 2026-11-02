@@ -134,7 +134,9 @@ npx expo start            # press "i" for iOS simulator, "a" for Android
 - **Provider "seams".** External services are swappable behind one config file each, defaulting to a free/mock mode so the app runs with zero accounts:
   - `lib/payments.ts` — Cashfree Easy Split ↔ simulated escrow (default).
   - `lib/otp.ts` — MSG91 SMS ↔ mock OTP (default).
-  - `lib/maps.ts` — MapTiler ↔ free OpenStreetMap + Nominatim (default).
+  - `lib/maps.ts` — Mapbox (GL JS map, Search Box autocomplete, Directions routes).
+    Unlike the others this has **no free fallback**: without `NEXT_PUBLIC_MAPBOX_TOKEN`
+    the map and place search are unavailable and only a manual pin works.
   Flip any to production by setting its env var — no code change.
 - **Roles.** `profiles.staff_role` is `user` / `support` / `admin` (not the legacy `is_admin`). Gate with `requireAdmin` / `requireSupport` in `lib/auth.ts`.
 - **Migrations.** Edit `db/schema.ts` → `npm run db:generate` → `npm run db:migrate`. Never hand-edit the DB.
@@ -150,7 +152,7 @@ Copy the templates and fill them in — real values are **never committed**:
 - `quiko-app/.env.example` → `quiko-app/.env.local`
 - `quiko-mobile/.env.example` → `quiko-mobile/.env`
 
-Everything runs locally with just `DATABASE_URL`, `SESSION_SECRET`, and `DEV_OTP`. The optional provider keys (Cashfree, MSG91, MapTiler) are only needed to leave demo mode.
+Everything runs locally with just `DATABASE_URL`, `SESSION_SECRET`, and `DEV_OTP`. The Cashfree and MSG91 keys are only needed to leave demo mode. **`NEXT_PUBLIC_MAPBOX_TOKEN` is different** — maps and place search do not work without it, in any environment.
 
 ---
 
