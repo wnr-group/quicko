@@ -14,9 +14,22 @@ const canAccept = and(
   sql`coalesce(trim(${profiles.fullName}), '') <> ''`,
 );
 
+// The sender's window is when the parcel should ARRIVE, so trips are matched on their
+// arrival date (falling back to the departure date for single-day trips).
+const tripArrival = sql<string>`coalesce(${trips.arriveDate}, ${trips.travelDate})`;
+
+// A trip carries several packages, so what matters is the capacity it has LEFT,
+// not the capacity it started with. It is also what the traveller card shows as
+// "kg free" — advertising the total would promise space that is already committed.
+const tripSpareKg = sql<string>`${trips.capacityKg} - coalesce((
+  select sum(${packages.weightKg}) from ${matches}
+  join ${packages} on ${packages.id} = ${matches.packageId}
+  where ${matches.tripId} = ${trips.id} and ${matches.status} <> 'cancelled'
+), 0)`;
+
 /**
- * Discovery-first: travelers on a route within a date window, WITHOUT a weight
- * filter (package details not given yet) and WITHOUT price. Sorted by arrival
+ * Discovery-first: travelers on a route whose arrival falls in a date window, WITHOUT
+ * price. When the weight is known, trips without enough spare capacity are left out. Sorted by arrival
  * (earliest first) so the soonest deliveries surface.
  */
 export async function exploreTrips(params: {
@@ -26,6 +39,7 @@ export async function exploreTrips(params: {
   toLng: number;
   dateFrom: string;
   dateTo: string;
+  weightKg?: number;
 }) {
   const rows = await db
     .select({
@@ -44,9 +58,10 @@ export async function exploreTrips(params: {
     .innerJoin(profiles, eq(trips.travelerId, profiles.id))
     .where(
       and(
-        gte(trips.travelDate, params.dateFrom),
-        lte(trips.travelDate, params.dateTo),
+        gte(tripArrival, params.dateFrom),
+        lte(tripArrival, params.dateTo),
         eq(trips.status, "active"),
+        params.weightKg != null ? gte(tripSpareKg, params.weightKg) : undefined,
         // Suspended, unregistered or unverified travellers can't accept — keep
         // them out of discovery so nobody requests (and pays for) a dead end.
         canAccept,
@@ -83,15 +98,7 @@ export async function findMatchingTrips(pkg: {
   dateTo: string | null; // window end (null = single day)
   weightKg: number;
 }) {
-  // A trip carries several packages, so what matters is the capacity it has
-  // LEFT, not the capacity it started with. `spareKg` is also what the traveller
-  // card shows as "kg free" — advertising the total would promise space that is
-  // already committed.
-  const spareKg = sql<string>`${trips.capacityKg} - coalesce((
-    select sum(${packages.weightKg}) from ${matches}
-    join ${packages} on ${packages.id} = ${matches.packageId}
-    where ${matches.tripId} = ${trips.id} and ${matches.status} <> 'cancelled'
-  ), 0)`;
+  const spareKg = tripSpareKg;
 
   const rows = await db
     .select({
@@ -111,8 +118,8 @@ export async function findMatchingTrips(pkg: {
     .innerJoin(profiles, eq(trips.travelerId, profiles.id))
     .where(
       and(
-        gte(trips.travelDate, pkg.travelDate),
-        lte(trips.travelDate, pkg.dateTo ?? pkg.travelDate),
+        gte(tripArrival, pkg.travelDate),
+        lte(tripArrival, pkg.dateTo ?? pkg.travelDate),
         eq(trips.status, "active"),
         gte(spareKg, pkg.weightKg),
         canAccept, // registered + verified, not suspended
