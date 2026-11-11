@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { NotificationBell } from "@/components/NotificationBell";
 import { BottomNav } from "@/components/BottomNav";
@@ -7,7 +6,6 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { RouteCard } from "@/components/RouteCard";
 import { IconPackage, IconPlane, IconChevronRight } from "@/components/icons";
 import { requireUser, getProfile } from "@/lib/auth";
-import { getHomeRole } from "@/lib/session";
 import { getMyPackages } from "@/lib/queries/packages";
 import { countActiveMatches } from "@/lib/queries/matches";
 import { getIncomingForUser } from "@/lib/queries/requests";
@@ -17,8 +15,6 @@ import { inr, formatPhone, initials, placeShort, dateShort } from "@/core/format
 
 export default async function AppHome() {
   const user = await requireUser();
-  // Travelled-first users land back on their traveller dashboard.
-  if ((await getHomeRole()) === "traveler") redirect("/app/travel");
   const [profile, myPackages, matchCount, incoming, messageCount] = await Promise.all([
     getProfile(),
     getMyPackages(user.id),
@@ -54,14 +50,14 @@ export default async function AppHome() {
       <main className="no-scrollbar flex-1 overflow-y-auto px-5 pb-6 pt-5">
         <div className="flex flex-col gap-3">
           <RoleCard
-            href="/app/role/sender"
+            href="/app/send"
             title="Send a Package"
             subtitle="Find a traveler on your route"
             tone="brand"
             icon={<IconPackage width={22} height={22} />}
           />
           <RoleCard
-            href="/app/role/traveler"
+            href="/app/travel"
             title="Travel & Earn"
             subtitle="Earn on trips you're already taking"
             tone="plain"
@@ -132,7 +128,6 @@ function RoleCard({
   return (
     <Link
       href={href}
-      prefetch={false} // the role route sets a cookie — don't fire it on prefetch
       className={`flex items-center gap-4 rounded-3xl p-4 transition-transform active:scale-[0.98] ${
         tone === "brand" ? "bg-brand shadow-brand" : "bg-canvas shadow-card"
       }`}
