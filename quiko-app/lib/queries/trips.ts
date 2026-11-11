@@ -184,6 +184,28 @@ export async function createTrip(travelerId: string, input: CreateTripInput) {
   return row;
 }
 
+/** An open trip of this traveller whose dates overlap [travelDate, arriveDate]
+ *  (inclusive) — one person can't be on two trips on the same day. */
+export async function findOverlappingTrip(
+  travelerId: string,
+  travelDate: string,
+  arriveDate: string,
+) {
+  const [row] = await db
+    .select()
+    .from(trips)
+    .where(
+      and(
+        eq(trips.travelerId, travelerId),
+        eq(trips.status, "active"),
+        lte(trips.travelDate, arriveDate),
+        sql`coalesce(${trips.arriveDate}, ${trips.travelDate}) >= ${travelDate}`,
+      ),
+    )
+    .limit(1);
+  return row ?? null;
+}
+
 export async function getMyTrips(travelerId: string) {
   const rows = await db
     .select()

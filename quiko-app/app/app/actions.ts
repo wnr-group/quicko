@@ -46,7 +46,8 @@ import {
   setDetourOptOut,
   cancelMatchAsParticipant,
 } from "@/lib/queries/matches";
-import { getTrip, getOwnedTrip, createTrip, deleteTrip } from "@/lib/queries/trips";
+import { getTrip, getOwnedTrip, createTrip, deleteTrip, findOverlappingTrip } from "@/lib/queries/trips";
+import { dateShort } from "@/core/format";
 import { markChatRead, markAllRead } from "@/lib/queries/notifications";
 import { sendMessage, sendLocationMessage } from "@/lib/queries/messages";
 import { submitKyc, approveKyc, rejectKyc } from "@/lib/queries/kyc";
@@ -321,6 +322,15 @@ export async function createTripAction(input: CreateTripInput) {
   const parsed = createTripSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  const clash = await findOverlappingTrip(user.id, parsed.data.travelDate, parsed.data.arriveDate);
+  if (clash) {
+    return {
+      ok: false as const,
+      error: `You already have a trip on these dates (${dateShort(clash.travelDate)}${
+        clash.arriveDate && clash.arriveDate !== clash.travelDate ? ` – ${dateShort(clash.arriveDate)}` : ""
+      }). Pick dates that don't overlap.`,
+    };
   }
   const trip = await createTrip(user.id, parsed.data);
   // Auto-match: alert senders of open packages already waiting on this route.
