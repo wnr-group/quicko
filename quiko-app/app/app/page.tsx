@@ -4,20 +4,22 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { BottomNav } from "@/components/BottomNav";
 import { StatusBadge } from "@/components/StatusBadge";
 import { RouteCard } from "@/components/RouteCard";
-import { IconPackage, IconPlane, IconChevronRight } from "@/components/icons";
+import { IconPackage, IconPlane, IconChevronRight, TRANSPORT_ICONS_SOLID } from "@/components/icons";
 import { requireUser, getProfile } from "@/lib/auth";
 import { getMyPackages } from "@/lib/queries/packages";
+import { getMyTrips } from "@/lib/queries/trips";
 import { countActiveMatches } from "@/lib/queries/matches";
 import { getIncomingForUser } from "@/lib/queries/requests";
 import { unreadMessageCount } from "@/lib/queries/notifications";
 import { IncomingRequestsPopup } from "@/components/IncomingRequestsPopup";
-import { inr, formatPhone, initials, placeShort, dateShort } from "@/core/format";
+import { inr, formatPhone, initials, placeShort, dateShort, timeWindow } from "@/core/format";
 
 export default async function AppHome() {
   const user = await requireUser();
-  const [profile, myPackages, matchCount, incoming, messageCount] = await Promise.all([
+  const [profile, myPackages, myTrips, matchCount, incoming, messageCount] = await Promise.all([
     getProfile(),
     getMyPackages(user.id),
+    getMyTrips(user.id),
     countActiveMatches(user.id),
     getIncomingForUser(user.id),
     unreadMessageCount(user.id),
@@ -65,43 +67,83 @@ export default async function AppHome() {
           />
         </div>
 
-        <h2 className="mb-3 mt-8 flex items-center gap-2 px-1 text-[13px] font-bold uppercase tracking-wide text-ink">
-          Your packages
-          <span className="h-px flex-1 bg-line" />
-        </h2>
-        {myPackages.length === 0 ? (
-          <div className="rounded-2xl border-2 border-dashed border-line-strong bg-surface p-6 text-center">
+        {myPackages.length === 0 && myTrips.length === 0 && (
+          <div className="mt-8 rounded-2xl border-2 border-dashed border-line-strong bg-surface p-6 text-center">
             <p className="text-sm text-muted">
-              No packages yet. Tap <b className="text-ink">Send a Package</b> to
-              post your first one.
+              Nothing yet. Tap <b className="text-ink">Send a Package</b> to post a
+              package, or <b className="text-ink">Travel &amp; Earn</b> to post a trip.
             </p>
           </div>
-        ) : (
-          <ul className="flex flex-col gap-2.5">
-            {myPackages.map((p) => {
-              return (
-                <li key={p.id}>
-                  <RouteCard
-                    href={`/app/packages/${p.id}`}
-                    from={placeShort(p.fromCity)}
-                    to={placeShort(p.toCity)}
-                    kind={{ icon: <IconPackage width={13} height={13} strokeWidth={2.25} />, label: "Package" }}
-                    // Price stays hidden until a traveller has been matched and accepted.
-                    amount={["matched", "in_transit", "delivered"].includes(p.status) ? inr(p.offerPrice) : undefined}
-                    meta={
-                      <>
-                        <span className="font-bold text-ink">{dateShort(p.travelDate)}</span>{" "}
-                        <span className="rounded-md bg-brand px-1.5 py-0.5 text-[12px] font-bold text-ink">
-                          {p.weightKg}kg
+        )}
+
+        {myPackages.length > 0 && (
+          <>
+            <h2 className="mb-3 mt-8 flex items-center gap-2 px-1 text-[13px] font-bold uppercase tracking-wide text-ink">
+              Your packages
+              <span className="h-px flex-1 bg-line" />
+            </h2>
+            <ul className="flex flex-col gap-2.5">
+              {myPackages.map((p) => {
+                return (
+                  <li key={p.id}>
+                    <RouteCard
+                      href={`/app/packages/${p.id}`}
+                      from={placeShort(p.fromCity)}
+                      to={placeShort(p.toCity)}
+                      kind={{ icon: <IconPackage width={13} height={13} strokeWidth={2.25} />, label: "Package" }}
+                      // Price stays hidden until a traveller has been matched and accepted.
+                      amount={["matched", "in_transit", "delivered"].includes(p.status) ? inr(p.offerPrice) : undefined}
+                      meta={
+                        <>
+                          <span className="font-bold text-ink">{dateShort(p.travelDate)}</span>{" "}
+                          <span className="rounded-md bg-brand px-1.5 py-0.5 text-[12px] font-bold text-ink">
+                            {p.weightKg}kg
+                          </span>
+                        </>
+                      }
+                      badge={<StatusBadge status={p.status} />}
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          </>
+        )}
+
+        {myTrips.length > 0 && (
+          <>
+            <h2 className="mb-3 mt-8 flex items-center gap-2 px-1 text-[13px] font-bold uppercase tracking-wide text-ink">
+              Your trips
+              <span className="h-px flex-1 bg-line" />
+            </h2>
+            <ul className="flex flex-col gap-2.5">
+              {myTrips.map((t) => {
+                const Transport = TRANSPORT_ICONS_SOLID[t.transport] ?? TRANSPORT_ICONS_SOLID.bus;
+                return (
+                  <li key={t.id}>
+                    <RouteCard
+                      href={`/app/travel/trips/${t.id}`}
+                      from={placeShort(t.fromCity)}
+                      to={placeShort(t.toCity)}
+                      kind={{ icon: <Transport width={14} height={14} />, label: "Trip", tone: "trip" }}
+                      amount={
+                        <span className="rounded-lg bg-brand px-2 py-1 text-[13px] font-bold text-ink">
+                          {t.spareKg}kg free
                         </span>
-                      </>
-                    }
-                    badge={<StatusBadge status={p.status} />}
-                  />
-                </li>
-              );
-            })}
-          </ul>
+                      }
+                      meta={
+                        <span className="font-bold text-ink">
+                          {dateShort(t.travelDate)} · {timeWindow(t.departTime)}
+                          <span className="font-semibold text-muted"> · of {t.capacityKg}kg</span>
+                        </span>
+                      }
+                      badge={<StatusBadge status={t.status} />}
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          </>
         )}
       </main>
 
