@@ -34,6 +34,7 @@ export default async function ExplorePage({
     fromLat: parsed.from.lat, fromLng: parsed.from.lng,
     toLat: parsed.to.lat, toLng: parsed.to.lng,
     dateFrom: r1, dateTo: r2,
+    weightKg: parsed.weightKg,
   });
 
   // Filters + sort (client-driven via URL params; applied here in-memory).
@@ -48,7 +49,7 @@ export default async function ExplorePage({
       if (sort === "departure")
         return a.trip.travelDate.localeCompare(b.trip.travelDate) || (a.trip.departTime ?? "").localeCompare(b.trip.departTime ?? "");
       // arrival (default)
-      return a.trip.travelDate.localeCompare(b.trip.travelDate) || (a.trip.arriveTime ?? "").localeCompare(b.trip.arriveTime ?? "");
+      return (a.trip.arriveDate ?? a.trip.travelDate).localeCompare(b.trip.arriveDate ?? b.trip.travelDate) || (a.trip.arriveTime ?? "").localeCompare(b.trip.arriveTime ?? "");
     });
 
   // Tier + price follow from each traveller's arrival date (today → Express,

@@ -41,7 +41,7 @@ export default async function TripPackagesPage({
           fromLng: trip.fromLng,
           toLat: trip.toLat,
           toLng: trip.toLng,
-          tripDate: trip.travelDate,
+          tripDate: trip.arriveDate ?? trip.travelDate, // packages are windowed by arrival
           capacityKg: await spareCapacity(trip.id, trip.capacityKg),
         })
       : [];

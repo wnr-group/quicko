@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
 import { IconShieldCheck, IconClock, IconX } from "@/components/icons";
 import { submitKycAction } from "@/app/app/actions";
+
+// Waiting on a human reviewer (hours, realistically), so poll gently.
+const POLL_MS = 20_000;
 
 const ID_TYPES = [
   { value: "aadhaar", label: "Aadhaar" },
@@ -26,6 +29,22 @@ export function KycForm({
   const [legalName, setLegalName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  // While under review, poll for the admin's decision so the status flips to
+  // Verified/Rejected on this page without leaving it. Pauses in background tabs
+  // and re-checks immediately when the tab becomes visible again.
+  useEffect(() => {
+    if (status !== "pending") return;
+    const tick = () => {
+      if (document.visibilityState === "visible") router.refresh();
+    };
+    const id = setInterval(tick, POLL_MS);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", tick);
+    };
+  }, [status, router]);
 
   if (status === "verified") {
     return (
