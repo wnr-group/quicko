@@ -327,9 +327,9 @@ export async function createTripAction(input: CreateTripInput) {
   if (clash) {
     return {
       ok: false as const,
-      error: `You already have a trip on these dates (${dateShort(clash.travelDate)}${
+      error: `This overlaps a trip you already have: ${clash.fromCity} → ${clash.toCity} (${dateShort(clash.travelDate)}${
         clash.arriveDate && clash.arriveDate !== clash.travelDate ? ` – ${dateShort(clash.arriveDate)}` : ""
-      }). Pick dates that don't overlap.`,
+      }). Pick dates that don't overlap with it.`,
     };
   }
   const trip = await createTrip(user.id, parsed.data);
