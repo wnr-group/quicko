@@ -191,7 +191,7 @@ export async function createTrip(travelerId: string, input: CreateTripInput) {
   return row;
 }
 
-/** An open trip of this traveller whose dates overlap [travelDate, arriveDate]
+/** An active or matched trip of this traveller whose dates overlap [travelDate, arriveDate]
  *  (inclusive) — one person can't be on two trips on the same day. */
 export async function findOverlappingTrip(
   travelerId: string,
@@ -204,7 +204,7 @@ export async function findOverlappingTrip(
     .where(
       and(
         eq(trips.travelerId, travelerId),
-        eq(trips.status, "active"),
+        inArray(trips.status, ["active", "matched"]),
         lte(trips.travelDate, arriveDate),
         sql`coalesce(${trips.arriveDate}, ${trips.travelDate}) >= ${travelDate}`,
       ),
