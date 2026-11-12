@@ -6,6 +6,9 @@ import { Button } from "@/components/ui";
 import { IconShieldCheck, IconClock, IconX } from "@/components/icons";
 import { submitKycAction } from "@/app/app/actions";
 
+// Waiting on a human reviewer (hours, realistically), so poll gently.
+const POLL_MS = 20_000;
+
 const ID_TYPES = [
   { value: "aadhaar", label: "Aadhaar" },
   { value: "pan", label: "PAN" },
@@ -35,7 +38,7 @@ export function KycForm({
     const tick = () => {
       if (document.visibilityState === "visible") router.refresh();
     };
-    const id = setInterval(tick, 4000);
+    const id = setInterval(tick, POLL_MS);
     document.addEventListener("visibilitychange", tick);
     return () => {
       clearInterval(id);
